@@ -1,16 +1,20 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 
-export const getSlackImageBlob = async(privateUrl) => {
-    const response = await fetch(`http://localhost:5001/api/fetch-image/${encodeURIComponent(privateUrl.replace('https://files.slack.com/', ''))}`);
-
+export const getSlackImageBlob = async (privateUrl) => {
+    const encodedPath = encodeURIComponent(
+      privateUrl.replace('https://files.slack.com/', '')
+    );
+  
+    const response = await fetch(`/api/image/${encodedPath}`);
+  
     if (!response.ok) {
-        throw new Error('Failed to fetch Slack image');
+      throw new Error('Failed to fetch Slack image');
     }
-
+  
     const blob = await response.blob();
     return URL.createObjectURL(blob);
-}
+  };
 
 export const SlackImage = ({ file }) => {
     const [blob, setBlob] = useState(null);

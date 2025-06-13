@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0033CC" />
+      <stop offset="100%" stop-color="#3366FF" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" fill="url(#gradient)" rx="20" ry="20" />
+  <g fill="#FFFFFF">
+    <path d="M50,70 L50,130 L65,130 L65,110 L85,110 C97.5,110 110,97.5 110,85 C110,72.5 97.5,60 85,60 L50,70 Z M65,75 L85,70 C90,70 95,75 95,85 C95,95 90,100 85,100 L65,100 L65,75 Z" />
+    <path d="M120,60 L120,130 L135,130 L135,105 L140,105 L155,130 L175,130 L155,100 C165,95 170,85 170,75 C170,65 160,60 150,60 L120,60 Z M135,75 L150,75 C155,75 155,80 155,85 C155,90 155,95 150,95 L135,95 L135,75 Z" />
+    <path d="M50,140 L50,150 L170,150 L170,140 L50,140 Z" />
+  </g>
+  <circle cx="30" cy="30" r="10" fill="#FFFFFF" opacity="0.3" />
+  <circle cx="170" cy="170" r="15" fill="#FFFFFF" opacity="0.3" />
+  <circle cx="150" cy="40" r="5" fill="#FFFFFF" opacity="0.3" />
+  <circle cx="40" cy="160" r="8" fill="#FFFFFF" opacity="0.3" />
+</svg>
