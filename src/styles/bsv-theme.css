@@ -1,0 +1,161 @@
+/* BSV Theme - Brand Colors and Styling */
+
+:root {
+  /* Primary Colors */
+  --bsv-primary: #0033CC;      /* BSV Blue */
+  --bsv-primary-light: #3366FF;
+  --bsv-primary-dark: #002299;
+  --bsv-secondary: #FFFFFF;    /* White */
+  
+  /* Background Colors */
+  --bsv-bg-primary: #FFFFFF;
+  --bsv-bg-secondary: #F8F9FA;
+  --bsv-bg-tertiary: #E9EFFF;  /* Light blue background */
+  --bsv-bg-accent: #F0F4FF;    /* Subtle blue accent */
+  
+  /* Text Colors */
+  --bsv-text-primary: #212529;
+  --bsv-text-secondary: #495057;
+  --bsv-text-tertiary: #6C757D;
+  --bsv-text-light: #FFFFFF;
+  
+  /* Border Colors */
+  --bsv-border-light: #DEE2E6;
+  --bsv-border-medium: #CED4DA;
+  --bsv-border-dark: #ADB5BD;
+  
+  /* Accent Colors */
+  --bsv-accent: #0033CC;
+  --bsv-success: #28A745;
+  --bsv-warning: #FFC107;
+  --bsv-danger: #DC3545;
+  
+  /* Shadows */
+  --bsv-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --bsv-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --bsv-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  
+  /* Typography */
+  --bsv-font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --bsv-font-size-base: 16px;
+  --bsv-line-height-base: 1.5;
+  
+  /* Border Radius */
+  --bsv-border-radius-sm: 4px;
+  --bsv-border-radius-md: 6px;
+  --bsv-border-radius-lg: 8px;
+  
+  /* Spacing */
+  --bsv-spacing-1: 4px;
+  --bsv-spacing-2: 8px;
+  --bsv-spacing-3: 16px;
+  --bsv-spacing-4: 24px;
+  --bsv-spacing-5: 32px;
+  --bsv-spacing-6: 48px;
+  
+  /* Transitions */
+  --bsv-transition-fast: 0.15s ease;
+  --bsv-transition-normal: 0.3s ease;
+}
+
+/* BSV Pattern Background */
+.bsv-pattern-bg {
+  background-image: linear-gradient(45deg, var(--bsv-primary) 25%, transparent 25%),
+                    linear-gradient(-45deg, var(--bsv-primary) 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, var(--bsv-primary) 75%),
+                    linear-gradient(-45deg, transparent 75%, var(--bsv-primary) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  opacity: 0.05;
+}
+
+/* BSV Dot Pattern Background */
+.bsv-dot-pattern {
+  background-image: radial-gradient(var(--bsv-primary) 2px, transparent 2px);
+  background-size: 20px 20px;
+  opacity: 0.05;
+}
+
+/* Common Button Styles */
+.bsv-button {
+  background-color: var(--bsv-primary);
+  color: var(--bsv-text-light);
+  border: none;
+  border-radius: var(--bsv-border-radius-md);
+  padding: var(--bsv-spacing-2) var(--bsv-spacing-4);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--bsv-transition-fast);
+}
+
+.bsv-button:hover {
+  background-color: var(--bsv-primary-light);
+}
+
+.bsv-button-outline {
+  background-color: transparent;
+  color: var(--bsv-primary);
+  border: 1px solid var(--bsv-primary);
+}
+
+.bsv-button-outline:hover {
+  background-color: var(--bsv-bg-accent);
+}
+
+/* Card Styles */
+.bsv-card {
+  background-color: var(--bsv-bg-primary);
+  border-radius: var(--bsv-border-radius-md);
+  box-shadow: var(--bsv-shadow-sm);
+  transition: box-shadow var(--bsv-transition-normal);
+}
+
+.bsv-card:hover {
+  box-shadow: var(--bsv-shadow-md);
+}
+
+/* Input Styles */
+.bsv-input {
+  border: 1px solid var(--bsv-border-medium);
+  border-radius: var(--bsv-border-radius-md);
+  padding: var(--bsv-spacing-2) var(--bsv-spacing-3);
+  font-family: var(--bsv-font-family);
+  font-size: var(--bsv-font-size-base);
+  transition: border-color var(--bsv-transition-fast), box-shadow var(--bsv-transition-fast);
+}
+
+.bsv-input:focus {
+  border-color: var(--bsv-primary);
+  box-shadow: 0 0 0 3px rgba(0, 51, 204, 0.15);
+  outline: none;
+}
+
+/* Badge Styles */
+.bsv-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 12px;
+  background-color: var(--bsv-bg-tertiary);
+  color: var(--bsv-primary);
+}
+
+/* Animations */
+@keyframes bsv-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bsv-slide-up {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.bsv-animate-fade {
+  animation: bsv-fade-in var(--bsv-transition-normal) forwards;
+}
+
+.bsv-animate-slide {
+  animation: bsv-slide-up var(--bsv-transition-normal) forwards;
+}

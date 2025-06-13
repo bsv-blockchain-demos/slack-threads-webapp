@@ -1,0 +1,273 @@
+.home-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--bsv-spacing-5);
+  font-family: var(--bsv-font-family);
+  width: 85%;
+  animation: bsv-fade-in var(--bsv-transition-normal) forwards;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--bsv-spacing-5);
+  padding-bottom: var(--bsv-spacing-3);
+  border-bottom: 1px solid var(--bsv-border-light);
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100px;
+  height: 3px;
+  background-color: var(--bsv-primary);
+  border-radius: var(--bsv-border-radius-sm);
+}
+
+.search-container {
+  width: 100%;
+  margin-top: var(--bsv-spacing-4);
+  margin-bottom: var(--bsv-spacing-3);
+  position: relative;
+}
+
+.search-container::before {
+  content: '🔍';
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--bsv-text-tertiary);
+  font-size: 14px;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--bsv-spacing-3) var(--bsv-spacing-3) var(--bsv-spacing-3) 40px;
+  font-size: 16px;
+  border: 1px solid var(--bsv-border-medium);
+  border-radius: var(--bsv-border-radius-md);
+  box-shadow: var(--bsv-shadow-sm);
+  transition: all var(--bsv-transition-fast);
+  background-color: var(--bsv-bg-primary);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--bsv-primary);
+  box-shadow: 0 0 0 3px rgba(0, 51, 204, 0.15);
+}
+
+.header h1 {
+  font-size: 32px;
+  color: var(--bsv-primary);
+  margin-bottom: var(--bsv-spacing-1);
+  font-weight: 700;
+}
+
+.header p {
+  color: var(--bsv-text-secondary);
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.ask-button {
+  background-color: var(--bsv-primary);
+  color: white;
+  border: none;
+  padding: var(--bsv-spacing-2) var(--bsv-spacing-4);
+  border-radius: var(--bsv-border-radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color var(--bsv-transition-fast);
+}
+
+.ask-button:hover {
+  background-color: var(--bsv-primary-light);
+}
+
+.thread-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--bsv-spacing-4);
+  padding: var(--bsv-spacing-3);
+  background-color: var(--bsv-bg-tertiary);
+  border-radius: var(--bsv-border-radius-md);
+}
+
+.filters {
+  display: flex;
+  gap: var(--bsv-spacing-2);
+}
+
+.filter-button {
+  padding: var(--bsv-spacing-2) var(--bsv-spacing-3);
+  border: 1px solid var(--bsv-border-medium);
+  background-color: var(--bsv-bg-primary);
+  border-radius: var(--bsv-border-radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--bsv-transition-fast);
+}
+
+.filter-button.active {
+  background-color: var(--bsv-primary);
+  color: var(--bsv-text-light);
+  border-color: var(--bsv-primary);
+}
+
+.thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bsv-spacing-4);
+}
+
+.thread-summary {
+  display: flex;
+  padding: var(--bsv-spacing-4);
+  border: 1px solid var(--bsv-border-light);
+  border-radius: var(--bsv-border-radius-md);
+  background-color: var(--bsv-bg-primary);
+  box-shadow: var(--bsv-shadow-sm);
+  transition: box-shadow var(--bsv-transition-normal), transform var(--bsv-transition-normal);
+  border-left: 3px solid var(--bsv-primary-light);
+}
+
+.thread-summary:hover {
+  box-shadow: var(--bsv-shadow-md);
+  transform: translateY(-2px);
+}
+
+.thread-stats-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: var(--bsv-spacing-4);
+  min-width: 80px;
+  border-right: 1px solid var(--bsv-border-light);
+  padding-right: var(--bsv-spacing-3);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--bsv-spacing-3);
+  padding: var(--bsv-spacing-2);
+  border-radius: var(--bsv-border-radius-sm);
+  width: 100%;
+  text-align: center;
+}
+
+.stat-item:first-child {
+  background-color: var(--bsv-bg-tertiary);
+  color: var(--bsv-primary);
+}
+
+.stat-number {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--bsv-text-tertiary);
+  margin-top: 2px;
+}
+
+.thread-content-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.thread-title {
+  font-size: 18px;
+  color: var(--bsv-primary);
+  text-decoration: none;
+  margin-bottom: var(--bsv-spacing-2);
+  display: block;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Markdown styling for thread titles */
+.thread-title p {
+  margin: 0;
+  display: inline;
+}
+
+.thread-title h1, .thread-title h2, .thread-title h3, 
+.thread-title h4, .thread-title h5, .thread-title h6 {
+  font-size: inherit;
+  margin: 0;
+  display: inline;
+  font-weight: inherit;
+}
+
+.thread-title code {
+  background-color: var(--bsv-bg-tertiary);
+  color: var(--bsv-primary);
+  padding: 3px 6px;
+  border-radius: var(--bsv-border-radius-sm);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font-size: 90%;
+  border: 1px solid var(--bsv-border-light);
+  display: inline-block;
+  line-height: 1.4;
+}
+
+.thread-title:hover {
+  color: var(--bsv-primary-light);
+}
+
+.thread-meta {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 13px;
+  color: var(--bsv-text-tertiary);
+  margin-top: auto;
+  padding-top: var(--bsv-spacing-3);
+}
+
+.asked-by {
+  display: inline-flex;
+  align-items: center;
+}
+
+.asked-by::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--bsv-primary);
+  border-radius: 50%;
+  margin-right: 6px;
+  opacity: 0.5;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: var(--bsv-spacing-5);
+  font-size: 18px;
+  border-radius: var(--bsv-border-radius-md);
+  background-color: var(--bsv-bg-primary);
+  box-shadow: var(--bsv-shadow-sm);
+  animation: bsv-fade-in var(--bsv-transition-normal) forwards;
+}
+
+.loading {
+  color: var(--bsv-text-secondary);
+}
+
+.error {
+  color: var(--bsv-danger);
+  border-left: 4px solid var(--bsv-danger);
+}
