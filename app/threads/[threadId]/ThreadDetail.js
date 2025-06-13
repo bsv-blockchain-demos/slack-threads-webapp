@@ -81,7 +81,7 @@ export default function ThreadDetail({ thread }) {
             <div key={index} className={`answer-section ${isBestAnswer ? 'best-answer' : ''}`}>
               <div className="vote-container">
                 <button className="vote-button">▲</button>
-                <span className="vote-count">{answer.votes?.length || 0}</span>
+                <span className="vote-count">{(answer.votes?.upvotes?.length - answer.votes?.downvotes?.length) || 0}</span>
                 <button className="vote-button">▼</button>
               </div>
               <div className="answer-content">

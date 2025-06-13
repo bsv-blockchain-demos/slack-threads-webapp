@@ -82,7 +82,7 @@ function ThreadList({ initialThreads }) {
           filteredThreads.map(thread => {
             const question = thread.messages?.[0] || {};
             const answerCount = thread.messages?.length - 1 || 0;
-            const voteCount = question.votes?.length || 0;
+            const voteCount = (question.votes?.upvotes?.length - question.votes?.downvotes?.length) || 0;
 
             return (
               <div key={thread._id} className="thread-summary">
