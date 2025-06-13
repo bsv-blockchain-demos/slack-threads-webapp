@@ -5,7 +5,6 @@ import remarkGfm from 'remark-gfm';
 import { SlackImage } from '../../../src/components/slackImage';
 import { convertSlackMarkdown } from '../../../src/components/ThreadList';
 import Link from 'next/link';
-import '../../../src/styles/ThreadDetail.css';
 
 export default function ThreadDetail({ thread }) {
   const question = thread?.messages?.[0] || null;

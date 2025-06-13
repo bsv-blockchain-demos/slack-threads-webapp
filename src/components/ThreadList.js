@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
-import '../styles/HomePage.css';
 
 // Move the convertSlackMarkdown function outside of the component so it can be exported
 const convertSlackMarkdown = (text) => {
@@ -58,9 +57,21 @@ function ThreadList({ initialThreads }) {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="search-input"
         />
+      </div>
+      <div className="thread-stats">
         <div className="filters">
-          <button onClick={() => setSortType('newest')}>Newest</button>
-          <button onClick={() => setSortType('active')}>Active</button>
+          <button 
+            className={`filter-button ${sortType === 'newest' ? 'active' : ''}`}
+            onClick={() => setSortType('newest')}
+          >
+            Newest
+          </button>
+          <button 
+            className={`filter-button ${sortType === 'active' ? 'active' : ''}`}
+            onClick={() => setSortType('active')}
+          >
+            Active
+          </button>
         </div>
       </div>
 
@@ -76,8 +87,14 @@ function ThreadList({ initialThreads }) {
             return (
               <div key={thread._id} className="thread-summary">
                 <div className="thread-stats-col">
-                  <div><strong>{voteCount}</strong> votes</div>
-                  <div><strong>{answerCount}</strong> answers</div>
+                  <div className="stat-item">
+                    <span className="stat-number">{voteCount}</span>
+                    <span className="stat-label">votes</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{answerCount}</span>
+                    <span className="stat-label">answers</span>
+                  </div>
                 </div>
                 <div className="thread-content-col">
                   <Link href={`/threads/${thread._id}`} className="thread-title">

@@ -2,7 +2,10 @@ import './globals.css';
 import Link from 'next/link';
 import Image from 'next/image';
 import bsvLogo from '../public/bsv-logo.svg';
+import '../src/styles/bsv-theme.css';
+import '../src/styles/App.css';
 import '../src/styles/HomePage.css';
+import '../src/styles/ThreadDetail.css';
 
 export const metadata = {
   title: 'Slack Threads',
