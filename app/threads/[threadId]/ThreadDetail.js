@@ -5,14 +5,16 @@ import remarkGfm from 'remark-gfm';
 import { SlackImage } from '../../../src/components/slackImage';
 import { convertSlackMarkdown } from '../../../src/components/ThreadList';
 import Link from 'next/link';
-import { createVoteToken, connectWallet, redeemVote } from '../../../src/components/walletServiceHooks';
+import { connectWallet, signVote } from '../../../src/components/walletServiceHooks';
 import { useState, useEffect } from 'react';
+import { Random, Utils } from '@bsv/sdk';
 
 export default function ThreadDetail({ thread }) {
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState(null);
   const [userPublicKey, setUserPublicKey] = useState(null);
 
+  // Consider revamping this so we don't have duplicate code/functions
   const question = thread?.messages?.[0] || null;
   const answers = thread?.messages?.slice(1) || [];
 
@@ -24,7 +26,7 @@ export default function ThreadDetail({ thread }) {
         if (walletInstance) {
           if (!userPublicKey) {
             const publicKey = await walletInstance.getPublicKey({ identityKey: true });
-            setUserPublicKey(publicKey);
+            setUserPublicKey(publicKey.publicKey);
             console.log('User public key:', userPublicKey);
           }
         }
@@ -32,7 +34,7 @@ export default function ThreadDetail({ thread }) {
         console.error('Failed to connect wallet:', error);
       }
     };
-    
+
     initWallet();
   }, []);
 
@@ -57,38 +59,41 @@ export default function ThreadDetail({ thread }) {
       userUpvote = answer?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey);
     }
 
+    console.log('User upvote:', userUpvote);
     if (userUpvote) {
       try {
-        await redeemVote('upvotes', userUpvote.txID);
-        // Change upvote info in DB
+        // Verify signature with upvote.publickKey
+        const keyID = Utils.toHex(Random(8));
+        const signature = await signVote(messageTS, 'upvotes', keyID);
+
+        // Remove upvote info in DB
         await fetch('/api/vote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messageTS,
             voteType: 'upvotes',
-            publicKey: userPublicKey,
-            txID: userUpvote.txID,
-            answers,
-            redeem: true,
+            publicKey: userUpvote.publicKey,
+            thread,
+            delete: true,
+            keyID,
+            signature,
           })
         })
-      } catch (error) {
-        console.error('Error redeeming vote:', error);
-      } finally {
+
         setLoading(false);
         return;
+      } catch (error) {
+        console.error('Error redeeming vote:', error);
       }
     }
 
-    // Create upvote token
+    // Create upvote signature
     try {
-      const response = await createVoteToken('upvotes');
-      console.log('Upvote token created:', response);
+      const keyID = Utils.toHex(Random(8));
+      const signature = await signVote(messageTS, 'upvotes', keyID);
 
-      const txID = response.txid;
-
-      // Put txID and userPublicKey in MongoDB
+      // Put userPublicKey in MongoDB
       await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,8 +101,9 @@ export default function ThreadDetail({ thread }) {
           messageTS,
           voteType: 'upvotes',
           publicKey: userPublicKey,
-          txID,
-          answers,
+          signature,
+          thread,
+          keyID,
         })
       })
 
@@ -127,38 +133,41 @@ export default function ThreadDetail({ thread }) {
       userDownvote = answer?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey);
     }
 
+    console.log('User downvote:', userDownvote);
     if (userDownvote) {
       try {
-        await redeemVote('downvotes', userDownvote.txID);
-        // Change downvote info in DB
+        // Verify signature with downvote.publickKey
+        const keyID = Utils.toHex(Random(8));
+        const signature = await signVote(messageTS, 'downvotes', keyID);
+
+        // Remove downvote info in DB
         await fetch('/api/vote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messageTS,
             voteType: 'downvotes',
-            publicKey: userPublicKey,
-            txID: userDownvote.txID,
-            answers,
-            redeem: true,
+            publicKey: userDownvote.publicKey,
+            thread,
+            delete: true,
+            keyID,
+            signature,
           })
         })
-      } catch (error) {
-        console.error('Error redeeming vote:', error);
-      } finally {
+
         setLoading(false);
         return;
+      } catch (error) {
+        console.error('Error redeeming vote:', error);
       }
     }
 
-    // Create downvote token
+    // Create downvote signature
     try {
-      const response = await createVoteToken('downvotes');
-      console.log('Downvote token created:', response);
+      const keyID = Utils.toHex(Random(8));
+      const signature = await signVote(messageTS, 'downvotes', keyID);
 
-      const txID = response.txid;
-
-      // Put txID and userPublicKey in MongoDB
+      // Put userPublicKey in MongoDB
       await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,8 +175,9 @@ export default function ThreadDetail({ thread }) {
           messageTS,
           voteType: 'downvotes',
           publicKey: userPublicKey,
-          txID,
-          answers,
+          signature,
+          thread,
+          keyID,
         })
       })
 
@@ -202,13 +212,13 @@ export default function ThreadDetail({ thread }) {
       {/* Question Body */}
       <div className="question-section">
         <div className="vote-container">
-          <button 
-            className={`vote-button ${question?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey) ? 'voted' : ''}`} 
+          <button
+            className={`vote-button ${question?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey) ? 'voted' : ''}`}
             onClick={() => handleUpvote(question.ts, 'question')}
           >▲</button>
           <span className="vote-count">{(question.votes?.upvotes?.length - question.votes?.downvotes?.length) || 0}</span>
-          <button 
-            className={`vote-button ${question?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey) ? 'voted' : ''}`} 
+          <button
+            className={`vote-button ${question?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey) ? 'voted' : ''}`}
             onClick={() => handleDownvote(question.ts, 'question')}
           >▼</button>
         </div>
@@ -252,13 +262,13 @@ export default function ThreadDetail({ thread }) {
           return (
             <div key={index} className={`answer-section ${isBestAnswer ? 'best-answer' : ''}`}>
               <div className="vote-container">
-                <button 
-                  className={`vote-button ${answer?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey) ? 'voted' : ''}`} 
+                <button
+                  className={`vote-button ${answer?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey) ? 'voted' : ''}`}
                   onClick={() => handleUpvote(answer.ts, 'answer')}
                 >▲</button>
                 <span className="vote-count">{(answer.votes?.upvotes?.length - answer.votes?.downvotes?.length) || 0}</span>
-                <button 
-                  className={`vote-button ${answer?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey) ? 'voted' : ''}`} 
+                <button
+                  className={`vote-button ${answer?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey) ? 'voted' : ''}`}
                   onClick={() => handleDownvote(answer.ts, 'answer')}
                 >▼</button>
               </div>
