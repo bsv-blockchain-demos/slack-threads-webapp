@@ -13,6 +13,10 @@ export default function ThreadDetail({ thread }) {
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState(null);
   const [userPublicKey, setUserPublicKey] = useState(null);
+  
+  // Optimistic UI update states
+  const [optimisticVotes, setOptimisticVotes] = useState({});
+  const [optimisticUserVotes, setOptimisticUserVotes] = useState({});
 
   // Consider revamping this so we don't have duplicate code/functions
   const question = thread?.messages?.[0] || null;
@@ -37,156 +41,161 @@ export default function ThreadDetail({ thread }) {
 
     initWallet();
   }, []);
+  
+  // Initialize optimistic UI states
+  useEffect(() => {
+    if (thread?.messages && userPublicKey) {
+      console.log('Initializing optimistic UI states');
+      const initialVotes = {};
+      const initialUserVotes = {};
+      
+      // Initialize for question
+      const question = thread.messages[0];
+      if (question) {
+        const upvotes = question.votes?.upvotes?.length || 0;
+        const downvotes = question.votes?.downvotes?.length || 0;
+        initialVotes[question.ts] = upvotes - downvotes;
+        
+        initialUserVotes[question.ts] = {
+          upvoted: question.votes?.upvotes?.some(vote => vote.publicKey === userPublicKey) || false,
+          downvoted: question.votes?.downvotes?.some(vote => vote.publicKey === userPublicKey) || false
+        };
+        
+        console.log(`Initializing question vote count: ${upvotes} - ${downvotes} = ${initialVotes[question.ts]}`);
+      }
+      
+      // Initialize for answers
+      thread.messages.slice(1).forEach(answer => {
+        const upvotes = answer.votes?.upvotes?.length || 0;
+        const downvotes = answer.votes?.downvotes?.length || 0;
+        initialVotes[answer.ts] = upvotes - downvotes;
+        
+        initialUserVotes[answer.ts] = {
+          upvoted: answer.votes?.upvotes?.some(vote => vote.publicKey === userPublicKey) || false,
+          downvoted: answer.votes?.downvotes?.some(vote => vote.publicKey === userPublicKey) || false
+        };
+        
+        console.log(`Initializing answer ${answer.ts} vote count: ${upvotes} - ${downvotes} = ${initialVotes[answer.ts]}`);
+      });
+      
+      setOptimisticVotes(initialVotes);
+      setOptimisticUserVotes(initialUserVotes);
+      console.log('Optimistic votes initialized:', initialVotes);
+    }
+  }, [thread, userPublicKey]);
 
   if (!thread) return <div className="error">Thread not found</div>;
 
-  const handleUpvote = async (messageTS, type) => {
+  const handleVote = async (messageTS, type, direction) => {
     if (loading) return;
     setLoading(true);
-
+  
     if (!wallet) {
       console.error('Wallet not connected');
       setLoading(false);
       return;
     }
-
-    // Check if user has already voted
-    let userUpvote;
-    if (type === 'question') {
-      userUpvote = question?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey);
+  
+    const isUpvoted = optimisticUserVotes[messageTS]?.upvoted;
+    const isDownvoted = optimisticUserVotes[messageTS]?.downvoted;
+    let voteChange = 0;
+    const isVoteType = direction === 'upvotes';
+  
+    // Calculate vote change
+    if (isVoteType ? isUpvoted : isDownvoted) {
+      voteChange = isVoteType ? -1 : 1;
     } else {
-      const answer = answers.find(answer => answer.ts === messageTS);
-      userUpvote = answer?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey);
+      voteChange = isVoteType
+        ? (isDownvoted ? 2 : 1)
+        : (isUpvoted ? -2 : -1);
     }
+  
+    console.log(`${direction === 'upvotes' ? 'Upvote' : 'Downvote'} action on ${messageTS}: currently upvoted=${isUpvoted}, downvoted=${isDownvoted}, vote change=${voteChange}`);
+  
+    // Update optimistic UI
+    setOptimisticUserVotes(prev => {
+      const newState = { ...prev };
+      newState[messageTS] = {
+        upvoted: isVoteType ? !isUpvoted : false,
+        downvoted: !isVoteType ? !isDownvoted : false,
+      };
+      return newState;
+    });
+  
+    setOptimisticVotes(prev => {
+      const currentCount = prev[messageTS] ?? 0;
+      const newCount = currentCount + voteChange;
+      console.log(`Updating vote count for ${messageTS}: ${currentCount} + ${voteChange} = ${newCount}`);
+      return { ...prev, [messageTS]: newCount };
+    });
 
-    console.log('User upvote:', userUpvote);
-    if (userUpvote) {
+    const revertOptimism = () => {
+      setOptimisticUserVotes(prev => ({
+        ...prev,
+        [messageTS]: {
+          upvoted: isUpvoted,
+          downvoted: isDownvoted,
+        },
+      }));
+      setOptimisticVotes(prev => ({
+        ...prev,
+        [messageTS]: (prev[messageTS] || 0) - voteChange,
+      }));
+    };
+  
+    // Remove vote
+    if ((isVoteType && isUpvoted) || (!isVoteType && isDownvoted)) {
       try {
-        // Verify signature with upvote.publickKey
         const keyID = Utils.toHex(Random(8));
-        const signature = await signVote(messageTS, 'upvotes', keyID);
-
-        // Remove upvote info in DB
+        const signature = await signVote(messageTS, direction, keyID);
+  
         await fetch('/api/vote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messageTS,
-            voteType: 'upvotes',
-            publicKey: userUpvote.publicKey,
+            voteType: direction,
+            publicKey: userPublicKey,
             thread,
             delete: true,
             keyID,
             signature,
-          })
-        })
-
+          }),
+        });
+  
         setLoading(false);
         return;
       } catch (error) {
         console.error('Error redeeming vote:', error);
+        revertOptimism();
       }
     }
-
-    // Create upvote signature
+  
+    // Add vote
     try {
       const keyID = Utils.toHex(Random(8));
-      const signature = await signVote(messageTS, 'upvotes', keyID);
-
-      // Put userPublicKey in MongoDB
+      const signature = await signVote(messageTS, direction, keyID);
+  
       await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messageTS,
-          voteType: 'upvotes',
+          voteType: direction,
           publicKey: userPublicKey,
           signature,
           thread,
           keyID,
-        })
-      })
-
+        }),
+      });
     } catch (error) {
-      console.error('Error creating upvote token:', error);
+      console.error('Error creating vote token:', error);
+      revertOptimism();
     } finally {
       setLoading(false);
     }
   };
-
-  const handleDownvote = async (messageTS, type) => {
-    if (loading) return;
-    setLoading(true);
-
-    if (!wallet) {
-      console.error('Wallet not connected');
-      setLoading(false);
-      return;
-    }
-
-    // Check if user has already voted
-    let userDownvote;
-    if (type === 'question') {
-      userDownvote = question?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey);
-    } else {
-      const answer = answers.find(answer => answer.ts === messageTS);
-      userDownvote = answer?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey);
-    }
-
-    console.log('User downvote:', userDownvote);
-    if (userDownvote) {
-      try {
-        // Verify signature with downvote.publickKey
-        const keyID = Utils.toHex(Random(8));
-        const signature = await signVote(messageTS, 'downvotes', keyID);
-
-        // Remove downvote info in DB
-        await fetch('/api/vote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messageTS,
-            voteType: 'downvotes',
-            publicKey: userDownvote.publicKey,
-            thread,
-            delete: true,
-            keyID,
-            signature,
-          })
-        })
-
-        setLoading(false);
-        return;
-      } catch (error) {
-        console.error('Error redeeming vote:', error);
-      }
-    }
-
-    // Create downvote signature
-    try {
-      const keyID = Utils.toHex(Random(8));
-      const signature = await signVote(messageTS, 'downvotes', keyID);
-
-      // Put userPublicKey in MongoDB
-      await fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messageTS,
-          voteType: 'downvotes',
-          publicKey: userPublicKey,
-          signature,
-          thread,
-          keyID,
-        })
-      })
-
-    } catch (error) {
-      console.error('Error creating downvote token:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   return (
     <div className="thread-detail-container">
@@ -213,13 +222,13 @@ export default function ThreadDetail({ thread }) {
       <div className="question-section">
         <div className="vote-container">
           <button
-            className={`vote-button ${question?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey) ? 'voted' : ''}`}
-            onClick={() => handleUpvote(question.ts, 'question')}
+            className={`vote-button ${optimisticUserVotes[question.ts]?.upvoted ? 'voted' : ''}`}
+            onClick={() => handleVote(question.ts, 'question', 'upvotes')}
           >▲</button>
-          <span className="vote-count">{(question.votes?.upvotes?.length - question.votes?.downvotes?.length) || 0}</span>
+          <span className="vote-count">{optimisticVotes[question.ts] !== undefined ? optimisticVotes[question.ts] : (question.votes?.upvotes?.length || 0) - (question.votes?.downvotes?.length || 0)}</span>
           <button
-            className={`vote-button ${question?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey) ? 'voted' : ''}`}
-            onClick={() => handleDownvote(question.ts, 'question')}
+            className={`vote-button ${optimisticUserVotes[question.ts]?.downvoted ? 'voted' : ''}`}
+            onClick={() => handleVote(question.ts, 'question', 'downvotes')}
           >▼</button>
         </div>
         <div className="question-content">
@@ -263,13 +272,13 @@ export default function ThreadDetail({ thread }) {
             <div key={index} className={`answer-section ${isBestAnswer ? 'best-answer' : ''}`}>
               <div className="vote-container">
                 <button
-                  className={`vote-button ${answer?.votes?.upvotes?.find(upvote => upvote.publicKey === userPublicKey) ? 'voted' : ''}`}
-                  onClick={() => handleUpvote(answer.ts, 'answer')}
+                  className={`vote-button ${optimisticUserVotes[answer.ts]?.upvoted ? 'voted' : ''}`}
+                  onClick={() => handleVote(answer.ts, 'answer', 'upvotes')}
                 >▲</button>
-                <span className="vote-count">{(answer.votes?.upvotes?.length - answer.votes?.downvotes?.length) || 0}</span>
+                <span className="vote-count">{optimisticVotes[answer.ts] !== undefined ? optimisticVotes[answer.ts] : (answer.votes?.upvotes?.length || 0) - (answer.votes?.downvotes?.length || 0)}</span>
                 <button
-                  className={`vote-button ${answer?.votes?.downvotes?.find(downvote => downvote.publicKey === userPublicKey) ? 'voted' : ''}`}
-                  onClick={() => handleDownvote(answer.ts, 'answer')}
+                  className={`vote-button ${optimisticUserVotes[answer.ts]?.downvoted ? 'voted' : ''}`}
+                  onClick={() => handleVote(answer.ts, 'answer', 'downvotes')}
                 >▼</button>
               </div>
               <div className="answer-content">

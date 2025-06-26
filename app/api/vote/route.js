@@ -67,35 +67,37 @@ export async function POST(req) {
 
         console.log('Message found, processing vote')
 
-        // Ensure votes structure is present
-        if (!message.votes) {
-            console.log('Initializing votes structure')
-            message.votes = { upvotes: [], downvotes: [] }
-        }
-        if (!message.votes[voteType]) {
-            console.log(`Initializing ${voteType} array`)
-            message.votes[voteType] = []
-        }
+        const voteField = `messages.$[msg].votes.${voteType}`;
 
         if (deleteVote) {
             console.log('Deleting vote')
             // Remove vote
-            message.votes[voteType] = message.votes[voteType].filter(
-                (vote) => vote.publicKey !== publicKey
-            )
+            await threadsCollection.updateOne(
+                { _id: threadId },
+                {
+                    $pull: {
+                        [voteField]: { publicKey: publicKey }
+                    }
+                },
+                {
+                    arrayFilters: [{ "msg.ts": messageTS }]
+                }
+            );
         } else {
             console.log('Adding vote')
             // Add vote
-            message.votes[voteType].push({ publicKey: publicKey })
-            console.log('Vote added successfully')
+            await threadsCollection.updateOne(
+                { _id: threadId },
+                {
+                    $addToSet: {
+                        [voteField]: { publicKey: publicKey }
+                    }
+                },
+                {
+                    arrayFilters: [{ "msg.ts": messageTS }]
+                }
+            );
         }
-
-        // Save back to DB using updateOne
-        console.log('Updating database...')
-        await threadsCollection.updateOne(
-            { _id: threadId },
-            { $set: { messages: thread.messages } }
-        )
 
         return NextResponse.json({ success: true })
     } catch (err) {
