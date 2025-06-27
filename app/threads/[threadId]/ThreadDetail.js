@@ -9,11 +9,16 @@ import { connectWallet, signVote } from '../../../src/components/walletServiceHo
 import { useState, useEffect } from 'react';
 import { Random, Utils } from '@bsv/sdk';
 
+import Modal from './Modal';
+
 export default function ThreadDetail({ thread }) {
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState(null);
-  const [userPublicKey, setUserPublicKey] = useState(null);
-  
+  const [userPublicKey, setUserPublicKey] = useState('');
+  const [selectedMessageTS, setSelectedMessageTS] = useState('');
+  const [selectedPaymail, setSelectedPaymail] = useState('');
+  const [showModal, setShowModal] = useState(false);
+
   // Optimistic UI update states
   const [optimisticVotes, setOptimisticVotes] = useState({});
   const [optimisticUserVotes, setOptimisticUserVotes] = useState({});
@@ -41,43 +46,50 @@ export default function ThreadDetail({ thread }) {
 
     initWallet();
   }, []);
-  
+
+  const handleTipClick = (messageTS, paymail) => {
+    setSelectedMessageTS(messageTS);
+    setSelectedPaymail(paymail);
+    console.log('Handle tip click called');
+    setShowModal(true);
+  }
+
   // Initialize optimistic UI states
   useEffect(() => {
     if (thread?.messages && userPublicKey) {
       console.log('Initializing optimistic UI states');
       const initialVotes = {};
       const initialUserVotes = {};
-      
+
       // Initialize for question
       const question = thread.messages[0];
       if (question) {
         const upvotes = question.votes?.upvotes?.length || 0;
         const downvotes = question.votes?.downvotes?.length || 0;
         initialVotes[question.ts] = upvotes - downvotes;
-        
+
         initialUserVotes[question.ts] = {
           upvoted: question.votes?.upvotes?.some(vote => vote.publicKey === userPublicKey) || false,
           downvoted: question.votes?.downvotes?.some(vote => vote.publicKey === userPublicKey) || false
         };
-        
+
         console.log(`Initializing question vote count: ${upvotes} - ${downvotes} = ${initialVotes[question.ts]}`);
       }
-      
+
       // Initialize for answers
       thread.messages.slice(1).forEach(answer => {
         const upvotes = answer.votes?.upvotes?.length || 0;
         const downvotes = answer.votes?.downvotes?.length || 0;
         initialVotes[answer.ts] = upvotes - downvotes;
-        
+
         initialUserVotes[answer.ts] = {
           upvoted: answer.votes?.upvotes?.some(vote => vote.publicKey === userPublicKey) || false,
           downvoted: answer.votes?.downvotes?.some(vote => vote.publicKey === userPublicKey) || false
         };
-        
+
         console.log(`Initializing answer ${answer.ts} vote count: ${upvotes} - ${downvotes} = ${initialVotes[answer.ts]}`);
       });
-      
+
       setOptimisticVotes(initialVotes);
       setOptimisticUserVotes(initialUserVotes);
       console.log('Optimistic votes initialized:', initialVotes);
@@ -86,21 +98,21 @@ export default function ThreadDetail({ thread }) {
 
   if (!thread) return <div className="error">Thread not found</div>;
 
-  const handleVote = async (messageTS, type, direction) => {
+  const handleVote = async (messageTS, direction) => {
     if (loading) return;
     setLoading(true);
-  
+
     if (!wallet) {
       console.error('Wallet not connected');
       setLoading(false);
       return;
     }
-  
+
     const isUpvoted = optimisticUserVotes[messageTS]?.upvoted;
     const isDownvoted = optimisticUserVotes[messageTS]?.downvoted;
     let voteChange = 0;
     const isVoteType = direction === 'upvotes';
-  
+
     // Calculate vote change
     if (isVoteType ? isUpvoted : isDownvoted) {
       voteChange = isVoteType ? -1 : 1;
@@ -109,9 +121,9 @@ export default function ThreadDetail({ thread }) {
         ? (isDownvoted ? 2 : 1)
         : (isUpvoted ? -2 : -1);
     }
-  
+
     console.log(`${direction === 'upvotes' ? 'Upvote' : 'Downvote'} action on ${messageTS}: currently upvoted=${isUpvoted}, downvoted=${isDownvoted}, vote change=${voteChange}`);
-  
+
     // Update optimistic UI
     setOptimisticUserVotes(prev => {
       const newState = { ...prev };
@@ -121,7 +133,7 @@ export default function ThreadDetail({ thread }) {
       };
       return newState;
     });
-  
+
     setOptimisticVotes(prev => {
       const currentCount = prev[messageTS] ?? 0;
       const newCount = currentCount + voteChange;
@@ -142,13 +154,13 @@ export default function ThreadDetail({ thread }) {
         [messageTS]: (prev[messageTS] || 0) - voteChange,
       }));
     };
-  
+
     // Remove vote
     if ((isVoteType && isUpvoted) || (!isVoteType && isDownvoted)) {
       try {
         const keyID = Utils.toHex(Random(8));
         const signature = await signVote(messageTS, direction, keyID);
-  
+
         await fetch('/api/vote', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -162,7 +174,7 @@ export default function ThreadDetail({ thread }) {
             signature,
           }),
         });
-  
+
         setLoading(false);
         return;
       } catch (error) {
@@ -170,12 +182,12 @@ export default function ThreadDetail({ thread }) {
         revertOptimism();
       }
     }
-  
+
     // Add vote
     try {
       const keyID = Utils.toHex(Random(8));
       const signature = await signVote(messageTS, direction, keyID);
-  
+
       await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,7 +207,6 @@ export default function ThreadDetail({ thread }) {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className="thread-detail-container">
@@ -223,12 +234,12 @@ export default function ThreadDetail({ thread }) {
         <div className="vote-container">
           <button
             className={`vote-button ${optimisticUserVotes[question.ts]?.upvoted ? 'voted' : ''}`}
-            onClick={() => handleVote(question.ts, 'question', 'upvotes')}
+            onClick={() => handleVote(question.ts, 'upvotes')}
           >▲</button>
           <span className="vote-count">{optimisticVotes[question.ts] !== undefined ? optimisticVotes[question.ts] : (question.votes?.upvotes?.length || 0) - (question.votes?.downvotes?.length || 0)}</span>
           <button
             className={`vote-button ${optimisticUserVotes[question.ts]?.downvoted ? 'voted' : ''}`}
-            onClick={() => handleVote(question.ts, 'question', 'downvotes')}
+            onClick={() => handleVote(question.ts, 'downvotes')}
           >▼</button>
         </div>
         <div className="question-content">
@@ -241,6 +252,39 @@ export default function ThreadDetail({ thread }) {
           </div>
           {question?.userInfo && (
             <div className="user-card">
+              {/* Only show tip jar button if paymail is available */}
+              {question.paymail && (
+                <button
+                  onClick={() => handleTipClick(question.ts, question.paymail)}
+                  className="tip-jar-button"
+                  aria-label="Send tip"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    marginRight: 'var(--bsv-spacing-3)',
+                    marginTop: '42px',
+                    color: 'var(--bsv-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 'var(--bsv-spacing-1)',
+                    borderRadius: '50%',
+                    transition: 'transform var(--bsv-transition-fast), background-color var(--bsv-transition-fast)',
+                  }}
+                  title="Send a tip"
+                >
+                  <img 
+                    src="/tip.svg" 
+                    width="32" 
+                    height="32" 
+                    alt="Tip jar" 
+                    style={{ 
+                      filter: 'invert(37%) sepia(74%) saturate(1090%) hue-rotate(189deg) brightness(91%) contrast(98%)',
+                    }} 
+                  />
+                </button>
+              )}
               <div className="user-info">
                 <div className="user-avatar">
                   {question.userInfo.real_name?.[0]?.toUpperCase() || 'U'}
@@ -273,12 +317,12 @@ export default function ThreadDetail({ thread }) {
               <div className="vote-container">
                 <button
                   className={`vote-button ${optimisticUserVotes[answer.ts]?.upvoted ? 'voted' : ''}`}
-                  onClick={() => handleVote(answer.ts, 'answer', 'upvotes')}
+                  onClick={() => handleVote(answer.ts, 'upvotes')}
                 >▲</button>
                 <span className="vote-count">{optimisticVotes[answer.ts] !== undefined ? optimisticVotes[answer.ts] : (answer.votes?.upvotes?.length || 0) - (answer.votes?.downvotes?.length || 0)}</span>
                 <button
                   className={`vote-button ${optimisticUserVotes[answer.ts]?.downvoted ? 'voted' : ''}`}
-                  onClick={() => handleVote(answer.ts, 'answer', 'downvotes')}
+                  onClick={() => handleVote(answer.ts, 'downvotes')}
                 >▼</button>
               </div>
               <div className="answer-content">
@@ -310,6 +354,39 @@ export default function ThreadDetail({ thread }) {
                 )}
                 {answer.userInfo && (
                   <div className="user-card">
+                    {/* Only show tip jar button if paymail is available */}
+                    {answer.paymail && (
+                      <button
+                        onClick={() => handleTipClick(answer.ts, answer.paymail)}
+                        className="tip-jar-button"
+                        aria-label="Send tip"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          marginRight: 'var(--bsv-spacing-3)',
+                          marginTop: '16px',
+                          color: 'var(--bsv-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 'var(--bsv-spacing-1)',
+                          borderRadius: '50%',
+                          transition: 'transform var(--bsv-transition-fast), background-color var(--bsv-transition-fast)',
+                        }}
+                        title="Send a tip"
+                      >
+                        <img 
+                          src="/tip.svg" 
+                          width="24" 
+                          height="24" 
+                          alt="Tip jar" 
+                          style={{ 
+                            filter: 'invert(37%) sepia(74%) saturate(1090%) hue-rotate(189deg) brightness(91%) contrast(98%)',
+                          }} 
+                        />
+                      </button>
+                    )}
                     <div className="user-info">
                       <div className="user-avatar">
                         {answer.userInfo.real_name?.[0]?.toUpperCase() || 'U'}
@@ -332,6 +409,17 @@ export default function ThreadDetail({ thread }) {
       <div className="back-link">
         <Link href="/">← Back to all threads</Link>
       </div>
+
+      {/* Modal will be rendered via React Portal to document.body */}
+      {showModal && (
+        <Modal
+          onClose={() => setShowModal(false)}
+          thread={thread}
+          messageTS={selectedMessageTS}
+          publicKey={userPublicKey}
+          paymail={selectedPaymail}
+        />
+      )}
     </div>
   );
 }

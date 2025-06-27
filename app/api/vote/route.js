@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '../../../src/lib/db'
-import mongoose from 'mongoose'
 import { ProtoWallet } from '@bsv/sdk';
 import { Utils } from '@bsv/sdk';
+import mongoose from 'mongoose';
 
 console.log('API /api/vote loaded');
 
@@ -13,9 +13,9 @@ export async function POST(req) {
         const body = await req.json()
         console.log('Request body:', body)
 
-        const { messageTS, voteType, publicKey, signature, thread: threadData, delete: deleteVote, keyID } = body
+        const { messageTS, voteType, publicKey, signature, delete: deleteVote, keyID } = body
 
-        if (!messageTS || !voteType || !publicKey || !signature || !threadData || !keyID) {
+        if (!messageTS || !voteType || !publicKey || !signature || !keyID) {
             console.error('Missing required fields')
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
@@ -39,63 +39,41 @@ export async function POST(req) {
         await dbConnect()
         console.log('Database connected')
 
-        // Get the thread ID from the thread data
-        const threadId = threadData._id
-        console.log('Thread ID:', threadId)
+        const voteCollection = mongoose.connection.db.collection('votes')
 
-        // Access the collection directly instead of using the model
-        const threadsCollection = mongoose.connection.db.collection('threads')
+        console.log('Processing vote')
 
-        // Find the thread by its ID
-        const thread = await threadsCollection.findOne({ _id: threadId })
+        let oppositeVote = voteType === 'upvotes' ? 'downvotes' : 'upvotes';
 
-        if (!thread) {
-            console.error('Thread not found with ID:', threadId)
-            return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
-        }
-
-        console.log('Thread found, looking for message with ts:', messageTS)
-
-        // Locate the message inside the thread
-        const message = thread.messages.find(msg => msg.ts === messageTS)
-
-        if (!message) {
-            console.error('Message not found with ts:', messageTS)
-            console.log('Available message timestamps:', thread.messages.map(m => m.ts))
-            return NextResponse.json({ error: 'Message not found' }, { status: 404 })
-        }
-
-        console.log('Message found, processing vote')
-
-        const voteField = `messages.$[msg].votes.${voteType}`;
+        const voteField = voteType;
+        const oppositeVoteField = oppositeVote;
 
         if (deleteVote) {
             console.log('Deleting vote')
             // Remove vote
-            await threadsCollection.updateOne(
-                { _id: threadId },
+            await voteCollection.updateOne(
+                { _id: messageTS },
                 {
                     $pull: {
-                        [voteField]: { publicKey: publicKey }
+                        [`votes.${voteField}`]: { publicKey: publicKey }
                     }
                 },
-                {
-                    arrayFilters: [{ "msg.ts": messageTS }]
-                }
+                { upsert: true }
             );
         } else {
             console.log('Adding vote')
             // Add vote
-            await threadsCollection.updateOne(
-                { _id: threadId },
+            await voteCollection.updateOne(
+                { _id: messageTS },
                 {
                     $addToSet: {
-                        [voteField]: { publicKey: publicKey }
+                        [`votes.${voteField}`]: { publicKey: publicKey }
+                    },
+                    $pull: {
+                        [`votes.${oppositeVoteField}`]: { publicKey: publicKey }
                     }
                 },
-                {
-                    arrayFilters: [{ "msg.ts": messageTS }]
-                }
+                { upsert: true }
             );
         }
 

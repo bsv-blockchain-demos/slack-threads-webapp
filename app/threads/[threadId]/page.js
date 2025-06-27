@@ -4,21 +4,51 @@ import '../../../src/styles/ThreadDetail.css';
 
 import dbConnect from '../../../src/lib/db';
 import { getThreadById } from '../../../src/lib/threadController';
+import { getUserById } from '../../../src/lib/userController';
+import { getVotesByMessageTS } from '../../../src/lib/voteController';
 
 export const dynamic = 'force-dynamic'; // to disable caching
 
 export default async function ThreadPage({ params }) {
-  const { threadId } = params;
+  const { threadId } = await params;
 
   try {
     await dbConnect(); // Connect to MongoDB
     const thread = await getThreadById(threadId); // Direct database access
 
+    console.log('Thread:', thread);
+
     if (!thread) {
       throw new Error('Thread not found');
     }
 
-    return <ThreadDetail thread={JSON.parse(JSON.stringify(thread))} />;
+    // Check PayMail and votes for each message
+    // Then add them into thread.messages
+    await Promise.all(
+      thread.messages.map(async (message) => {
+        try {
+          const [user, votes] = await Promise.all([
+            getUserById(message.user),
+            getVotesByMessageTS(message.ts)
+          ]);
+    
+          message.paymail = user?.paymail || null;
+          message.votes = votes;
+        } catch (error) {
+          console.error(`Error processing message with ts=${message.ts}:`, error);
+          message.paymail = null;
+          message.votes = { upvotes: [], downvotes: [] };
+        }
+      })
+    );
+
+    console.log('Thread with PayMail and Votes:', thread);
+
+    return (
+      <>
+        <ThreadDetail thread={JSON.parse(JSON.stringify(thread))} />
+      </>
+    )
   } catch (error) {
     return (
       <div className="thread-detail">

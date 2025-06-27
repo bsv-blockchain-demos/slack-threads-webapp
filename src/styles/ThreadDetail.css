@@ -265,6 +265,7 @@
   background-color: var(--bsv-bg-tertiary);
   border-radius: var(--bsv-border-radius-md);
   margin-top: var(--bsv-spacing-3);
+  align-items: center;
 }
 
 .user-info {
