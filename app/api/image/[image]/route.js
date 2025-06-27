@@ -6,7 +6,7 @@ dotenv.config();
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 
 export async function GET(request, { params }) {
-  const { image } = params;
+  const { image } = await params;
 
   if (!image) {
     return NextResponse.json({ error: 'Missing image parameter.' }, { status: 400 });

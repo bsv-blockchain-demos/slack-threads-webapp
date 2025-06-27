@@ -6,8 +6,9 @@ import { SlackImage } from '../../../src/components/slackImage';
 import { convertSlackMarkdown } from '../../../src/components/ThreadList';
 import Link from 'next/link';
 import { connectWallet, signVote } from '../../../src/components/walletServiceHooks';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Random, Utils } from '@bsv/sdk';
+import { toast } from 'react-hot-toast';
 
 import Modal from './Modal';
 
@@ -18,6 +19,7 @@ export default function ThreadDetail({ thread }) {
   const [selectedMessageTS, setSelectedMessageTS] = useState('');
   const [selectedPaymail, setSelectedPaymail] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Optimistic UI update states
   const [optimisticVotes, setOptimisticVotes] = useState({});
@@ -27,12 +29,15 @@ export default function ThreadDetail({ thread }) {
   const question = thread?.messages?.[0] || null;
   const answers = thread?.messages?.slice(1) || [];
 
+  const hasAlertedRef = useRef(false);
+
   useEffect(() => {
     const initWallet = async () => {
       try {
         const walletInstance = await connectWallet();
         setWallet(walletInstance);
         if (walletInstance) {
+          setIsConnected(true);
           if (!userPublicKey) {
             const publicKey = await walletInstance.getPublicKey({ identityKey: true });
             setUserPublicKey(publicKey.publicKey);
@@ -41,6 +46,15 @@ export default function ThreadDetail({ thread }) {
         }
       } catch (error) {
         console.error('Failed to connect wallet:', error);
+        // Show popup message
+        if (!hasAlertedRef.current) {
+          toast.error('Failed to connect wallet. \n To interact with the app, please open a wallet client.', {
+            duration: 5000,
+            position: 'top-center',
+            id: 'wallet-connect-error',
+          });
+          hasAlertedRef.current = true;
+        }
       }
     };
 
@@ -235,11 +249,13 @@ export default function ThreadDetail({ thread }) {
           <button
             className={`vote-button ${optimisticUserVotes[question.ts]?.upvoted ? 'voted' : ''}`}
             onClick={() => handleVote(question.ts, 'upvotes')}
+            disabled={!isConnected}
           >▲</button>
           <span className="vote-count">{optimisticVotes[question.ts] !== undefined ? optimisticVotes[question.ts] : (question.votes?.upvotes?.length || 0) - (question.votes?.downvotes?.length || 0)}</span>
           <button
             className={`vote-button ${optimisticUserVotes[question.ts]?.downvoted ? 'voted' : ''}`}
             onClick={() => handleVote(question.ts, 'downvotes')}
+            disabled={!isConnected}
           >▼</button>
         </div>
         <div className="question-content">
@@ -318,11 +334,13 @@ export default function ThreadDetail({ thread }) {
                 <button
                   className={`vote-button ${optimisticUserVotes[answer.ts]?.upvoted ? 'voted' : ''}`}
                   onClick={() => handleVote(answer.ts, 'upvotes')}
+                  disabled={!isConnected}
                 >▲</button>
                 <span className="vote-count">{optimisticVotes[answer.ts] !== undefined ? optimisticVotes[answer.ts] : (answer.votes?.upvotes?.length || 0) - (answer.votes?.downvotes?.length || 0)}</span>
                 <button
                   className={`vote-button ${optimisticUserVotes[answer.ts]?.downvoted ? 'voted' : ''}`}
                   onClick={() => handleVote(answer.ts, 'downvotes')}
+                  disabled={!isConnected}
                 >▼</button>
               </div>
               <div className="answer-content">

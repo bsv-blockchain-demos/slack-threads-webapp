@@ -6,6 +6,7 @@ import '../src/styles/bsv-theme.css';
 import '../src/styles/App.css';
 import '../src/styles/HomePage.css';
 import '../src/styles/ThreadDetail.css';
+import ToasterWrapper from '../src/components/toast';
 
 export const metadata = {
   title: 'Slack Threads',
@@ -23,7 +24,10 @@ export default function RootLayout({ children }) {
             </Link>
           </div>
         </nav>
-        <main className="main-content">{children}</main>
+        <main className="main-content">
+          {children}
+          <ToasterWrapper />
+        </main>
       </body>
     </html>
   );
