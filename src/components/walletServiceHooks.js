@@ -28,6 +28,10 @@ export async function signVote(messageTS, type, keyID) {
     return signature;
 }
 
+export async function resolvePaymail(paymail) {
+    // TODO: Implement resolvePaymail
+}
+
 // TODO: Create function to verify thread validity with endpoint (createActionResponse)
 
 // export async function createVoteToken(type) {
