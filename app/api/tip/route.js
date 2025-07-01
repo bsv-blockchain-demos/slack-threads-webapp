@@ -38,26 +38,25 @@ export async function POST(req) {
 
         // Create transaction using wallet publicKey and receiver PayMail
         const paymailAddress = resolvePaymail(paymail);
-
         const wallet = connectWallet();
 
         // Check wallet balance
         const balance = await wallet.getBalance();
 
-        if (balance < amount) {
+        if (balance < amount + 10) {
             return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
         }
 
         const transaction = await wallet.createAction({
             description: 'Tip',
             outputs: [{
-                address: paymailAddress,
+                lockingScript: new P2PKH().lock(paymailAddress),
                 amount,
             }],
         });
-        const signedAction = await walletClient.signAction(transaction);
+        const signedAction = await wallet.signAction(transaction);
 
-        const txid = transaction.id;
+        const txid = signedAction.txid;
         
         // Get tipsCollection
         const tipsCollection = mongoose.connection.db.collection('tips');
