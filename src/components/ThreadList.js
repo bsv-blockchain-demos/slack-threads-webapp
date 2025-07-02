@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Move the convertSlackMarkdown function outside of the component so it can be exported
 const convertSlackMarkdown = (text) => {
@@ -16,28 +17,41 @@ const convertSlackMarkdown = (text) => {
   return formatted;
 };
 
-function ThreadList({ initialThreads }) {
-  const [threads, setThreads] = useState(initialThreads || []);
-  const [filteredThreads, setFilteredThreads] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, total }) {
+  const [threads, setThreads] = useState(initialThreads);
+  const [filteredThreads, setFilteredThreads] = useState(initialThreads);
   const [sortType, setSortType] = useState('newest');
-  const [currentPage, setCurrentPage] = useState(1);
-  const threadsPerPage = 10;
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+
+  const threadsPerPage = initialLimit;
+  const totalPages = Math.ceil(total / threadsPerPage);
+
+  const router = useRouter();
+
+  // Sync state when props change
+  useEffect(() => {
+    setThreads(initialThreads);
+    setFilteredThreads(sortThreads(initialThreads, sortType));
+  }, [initialThreads, sortType]);
+
+  useEffect(() => {
+    setSearchQuery(initialSearch);
+  }, [initialSearch]);
+
+  useEffect(() => {
+    setCurrentPage(initialPage);
+  }, [initialPage]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    router.push(`/?search=${searchQuery}&page=1`);
+  };
 
   useEffect(() => {
     setFilteredThreads(sortThreads(threads, sortType));
   }, [sortType, threads]);
-
-  useEffect(() => {
-    if (!searchQuery) {
-      setFilteredThreads(sortThreads(threads, sortType));
-    } else {
-      const filtered = threads.filter(t =>
-        JSON.stringify(t).toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredThreads(sortThreads(filtered, sortType));
-    }
-  }, [searchQuery, threads, sortType]);
 
   const sortThreads = (list, type) => {
     const sorted = [...list];
@@ -49,29 +63,24 @@ function ThreadList({ initialThreads }) {
     return sorted;
   };
 
-  // Calculate pagination
-  const indexOfLastThread = currentPage * threadsPerPage;
-  const indexOfFirstThread = indexOfLastThread - threadsPerPage;
-  const currentThreads = filteredThreads.slice(indexOfFirstThread, indexOfLastThread);
-  const totalPages = Math.ceil(filteredThreads.length / threadsPerPage);
-
-  // Handle page changes
-  const paginate = (pageNumber) => {
-    setCurrentPage(pageNumber);
-    console.log('Page changed to:', pageNumber);
+  const paginate = (page) => {
+    router.push(`/?search=${searchQuery}&page=${page}`);
   };
 
   return (
-    <>
+    <div className="thread-detail-container">
       <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
-        />
+        <form onSubmit={handleSearch} className="form">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+        </form>
       </div>
+
       <div className="thread-stats">
         <div className="filters">
           <button
@@ -90,25 +99,22 @@ function ThreadList({ initialThreads }) {
       </div>
 
       <div className="thread-list">
-        {filteredThreads.length === 0 ? (
+        {(filteredThreads.length === 0) ? (
           <p>No threads found</p>
         ) : (
-          currentThreads.map(thread => {
+          filteredThreads.map(thread => {
             const question = thread.messages?.[0] || {};
             const answerCount = thread.messages?.length - 1 || 0;
             const voteCount = (question.votes?.upvotes?.length - question.votes?.downvotes?.length) || 0;
-
+            
             return (
               <div key={thread._id} className="thread-summary">
-                <div className="thread-stats-col">
-                  <div className="stat-item">
-                    <span className="stat-number">{voteCount}</span>
-                    <span className="stat-label">votes</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-number">{answerCount}</span>
-                    <span className="stat-label">answers</span>
-                  </div>
+                <div className="vote-container">
+                  <span className="vote-count">{voteCount}</span>
+                  <span className="stat-label">votes</span>
+                  <div className="stat-divider"></div>
+                  <span className="vote-count">{answerCount}</span>
+                  <span className="stat-label">answers</span>
                 </div>
                 <div className="thread-content-col">
                   <Link href={`/threads/${thread._id}`} className="thread-title">
@@ -117,7 +123,10 @@ function ThreadList({ initialThreads }) {
                     </ReactMarkdown>
                   </Link>
                   <div className="thread-meta">
-                    Asked by {question.userInfo?.real_name || 'Anonymous'}
+                    <span className="asked-by">Asked by {question.userInfo?.real_name || 'Anonymous'}</span>
+                    {thread.saved_at && (
+                      <span className="timestamp">{new Date(thread.saved_at).toLocaleString()}</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -132,44 +141,25 @@ function ThreadList({ initialThreads }) {
               <button className="pagination-arrow" onClick={() => paginate(1)} aria-label="Go to first page" disabled={currentPage === 1}>«</button>
             </div>
             <div className="pagination-numbers">
-              {(() => {
-                // Show 3 pages at a time
-                // If on page 1, show pages 1-3
-                // If on page 2, show pages 1-2-3 where 2 highlighted, etc.
-                let startPage, endPage;
+              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                let page = currentPage;
+                if (page === 1) page = i + 1;
+                else if (page === totalPages) page = totalPages - 2 + i;
+                else page = page - 1 + i;
 
-                if (totalPages <= 3) {
-                  // Fewer than 3 pages total, show them all
-                  startPage = 1;
-                  endPage = totalPages;
-                } else if (currentPage === 1) {
-                  startPage = 1;
-                  endPage = 3;
-                } else if (currentPage === totalPages) {
-                  startPage = totalPages - 2;
-                  endPage = totalPages;
-                } else {
-                  startPage = currentPage - 1;
-                  endPage = currentPage + 1;
-                }
+                if (page < 1 || page > totalPages) return null;
 
-                // Generate array of page numbers to display
-                const pageNumbers = [];
-                for (let i = startPage; i <= endPage; i++) {
-                  pageNumbers.push(i);
-                }
-
-                return pageNumbers.map(number => (
+                return (
                   <button
-                    key={number}
-                    onClick={() => paginate(number)}
-                    disabled={currentPage === number}
-                    className={`pagination-number ${currentPage === number ? 'active' : ''}`}
+                    key={page}
+                    onClick={() => paginate(page)}
+                    disabled={page === currentPage}
+                    className={`pagination-number ${page === currentPage ? 'active' : ''}`}
                   >
-                    {number}
+                    {page}
                   </button>
-                ));
-              })()}
+                );
+              })}
             </div>
             <div className="pagination-arrow-container">
               <button className="pagination-arrow" onClick={() => paginate(totalPages)} aria-label="Go to last page" disabled={currentPage === totalPages}>»</button>
@@ -177,7 +167,7 @@ function ThreadList({ initialThreads }) {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 

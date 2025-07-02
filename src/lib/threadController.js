@@ -1,24 +1,29 @@
 import mongoose from 'mongoose';
 
 // Get all threads - works both as a direct function call and as an API route handler
-export async function getAllThreads({ sort = 'newest', limit = 20, skip = 0 } = {}) {
+export async function getAllThreads({ query, limit = 30, page = 1 } = {}) {
   const threadsCollection = mongoose.connection.db.collection('threads');
 
-  let sortOptions = {};
-  if (sort === 'newest') {
-    sortOptions = { 'messages.0.ts': -1 };
-  } else if (sort === 'active') {
-    sortOptions = { last_updated: -1 };
-  }
+  const skip = (page - 1) * limit;
 
-  const threads = await threadsCollection
-    .find({})
-    .sort(sortOptions)
-    .skip(skip)
-    .limit(limit)
-    .toArray();
+  // Helper for search regex
+  const buildSearchFilter = (query) => {
+    if (!query) return {};
+    const searchRegex = new RegExp(query.split(' ').join('|'), 'i');
+    return { 'messages.0.text': searchRegex };
+  };
 
-  return threads;
+  const [threads, total] = await Promise.all([
+    threadsCollection
+      .find(buildSearchFilter(query))
+      .sort({ 'messages.0.ts': -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray(),
+    threadsCollection.countDocuments(buildSearchFilter(query)),
+  ]);
+
+  return { threads, total };
 }
 
 // Search threads by question text

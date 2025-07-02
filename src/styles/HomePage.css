@@ -31,7 +31,7 @@
 
 .search-container {
   width: 100%;
-  margin-top: var(--bsv-spacing-4);
+  margin-top: var(--bsv-spacing-2);
   margin-bottom: var(--bsv-spacing-3);
   position: relative;
 }
@@ -102,8 +102,11 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  margin-bottom: var(--bsv-spacing-4);
-  padding: var(--bsv-spacing-2) 0;
+  margin-bottom: var(--bsv-spacing-2);
+  margin-top: -5px;
+  padding-bottom: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .filters {
@@ -137,18 +140,21 @@
 .thread-list {
   display: flex;
   flex-direction: column;
-  gap: var(--bsv-spacing-4);
+  gap: var(--bsv-spacing-2);
+  position: relative;
+  margin-top: -10px;
+  z-index: 0;
 }
 
 .thread-summary {
   display: flex;
   padding: var(--bsv-spacing-4);
-  border: 1px solid var(--bsv-border-light);
-  border-radius: var(--bsv-border-radius-md);
   background-color: var(--bsv-bg-primary);
+  border-radius: var(--bsv-border-radius-md);
   box-shadow: var(--bsv-shadow-sm);
-  transition: box-shadow var(--bsv-transition-normal), transform var(--bsv-transition-normal);
+  margin-bottom: var(--bsv-spacing-4);
   border-left: 3px solid var(--bsv-primary-light);
+  transition: box-shadow var(--bsv-transition-normal), transform var(--bsv-transition-normal);
 }
 
 .thread-summary:hover {
@@ -156,35 +162,27 @@
   transform: translateY(-2px);
 }
 
-.thread-stats-col {
+.vote-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-right: var(--bsv-spacing-4);
-  min-width: 80px;
-  border-right: 1px solid var(--bsv-border-light);
+  min-width: 60px;
   padding-right: var(--bsv-spacing-3);
+  border-right: 1px solid var(--bsv-border-light);
 }
 
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: var(--bsv-spacing-3);
-  padding: var(--bsv-spacing-2);
-  border-radius: var(--bsv-border-radius-sm);
-  width: 100%;
-  text-align: center;
+.stat-divider {
+  width: 80%;
+  height: 1px;
+  background-color: var(--bsv-border-light);
+  margin: var(--bsv-spacing-2) 0;
 }
 
-.stat-item:first-child {
-  background-color: var(--bsv-bg-tertiary);
-  color: var(--bsv-primary);
-}
-
-.stat-number {
-  font-size: 18px;
+.vote-count {
+  font-size: 20px;
   font-weight: 600;
+  margin: var(--bsv-spacing-1) 0;
   color: var(--bsv-text-secondary);
 }
 
@@ -242,9 +240,10 @@
 
 .thread-meta {
   display: flex;
-  justify-content: flex-end;
-  font-size: 13px;
+  gap: var(--bsv-spacing-4);
   color: var(--bsv-text-tertiary);
+  font-size: 14px;
+  align-items: center;
   margin-top: auto;
   padding-top: var(--bsv-spacing-3);
 }

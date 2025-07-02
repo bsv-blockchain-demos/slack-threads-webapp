@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import dbConnect from '../../../src/lib/db'
 import mongoose from 'mongoose';
 import { connectWallet } from '../../../src/components/walletServiceHooks';
-import { P2PKH, Hash } from '@bsv/sdk';
+import { Transaction } from '@bsv/sdk';
 import { PaymailClient } from '@bsv/paymail';
 
 export async function POST(req) {
@@ -33,13 +33,7 @@ export async function POST(req) {
         }
 
         const receiver = message?.user;
-        console.log('Receiver:', receiver);   
-
-        //Create transaction using wallet publicKey and receiver PayMail
-        const paymailPubKey = resolvePaymail(paymail);
-        const paymailHash = Hash.sha256(paymailPubKey);
-        const paymailAddress = Hash.ripemd160(paymailHash);
-        console.log('Paymail address:', paymailAddress); 
+        console.log('Receiver:', receiver);
 
         const wallet = await connectWallet();
 
@@ -51,24 +45,32 @@ export async function POST(req) {
         const balance = await wallet.getBalance();
         console.log('Wallet balance:', balance);
 
-        // Temp to test Modal
-        return NextResponse.json({ success: true });
-
         if (balance < amount + 10) {
             return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
         }
 
+        //Create transaction using wallet publicKey and receiver PayMail
+        const paymailDestinations = resolvePaymail(paymail, amount);
+        const reference = paymailDestinations.reference;
+
+        const totalAmount = paymailDestinations.outputs.reduce((total, destination) => total + destination.satoshis, 0);
+
+        if (totalAmount !== amount) {
+            return NextResponse.json({ error: 'Amount does not match' }, { status: 400 });
+        }
+
         const transaction = await wallet.createAction({
             description: 'Tip',
-            outputs: [{
-                lockingScript: new P2PKH().lock(paymailAddress),
-                amount,
-            }],
+            outputs: paymailDestinations.outputs.map((destination) => ({
+                lockingScript: destination.script,
+                satoshis: destination.satoshis,
+                outputDescription: `Tip to ${paymail}`,
+            })),
         });
         const signedAction = await wallet.signAction(transaction);
 
         const txid = signedAction.txid;
-        
+
         // Get tipsCollection
         const tipsCollection = mongoose.connection.db.collection('tips');
 
@@ -84,6 +86,11 @@ export async function POST(req) {
             { upsert: true }
         )
 
+        // Send transaction to paymail
+        const rawTx = Transaction.fromBEEF(signedAction.tx).toHex();
+        const response = await paymailSendTransaction(paymail, rawTx, reference);
+        console.log('Transaction response:', response);
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error processing tip:', error);
@@ -91,8 +98,14 @@ export async function POST(req) {
     }
 }
 
-async function resolvePaymail(paymail) {
+async function resolvePaymail(paymail, amount) {
     const client = new PaymailClient();
-    const pki = await client.getPki(paymail);
-    return pki.pubkey;
+    const destination = await client.getP2pPaymentDestination(paymail, amount);
+    return destination;
+}
+
+async function paymailSendTransaction(paymail, hex, reference) {
+    const client = new PaymailClient();
+    const response = await client.sendTransactionP2P(paymail, hex, reference);
+    return response;
 }
