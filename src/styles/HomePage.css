@@ -283,3 +283,83 @@
   color: var(--bsv-danger);
   border-left: 4px solid var(--bsv-danger);
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.pagination-button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination-numbers {
+  display: flex;
+  gap: 5px;
+}
+
+.pagination-number {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination-number.active {
+  background-color: var(--bsv-primary);
+  color: white;
+  border-color: var(--bsv-primary);
+}
+
+/* Styling for the arrow buttons */
+.pagination button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #e6e6e6;
+}
+
+/* Make the arrow buttons blue when active */
+.pagination button:not(:disabled):active {
+  background-color: var(--bsv-primary);
+  color: white;
+  border-color: var(--bsv-primary);
+}
+
+/* Specific styling for the pagination arrow buttons */
+.pagination-arrow {
+  color: var(--bsv-primary);
+  font-size: 18px;
+}
+
+.pagination-arrow:hover:not(:disabled) {
+  background-color: #e6f7ff !important;
+  border-color: var(--bsv-primary) !important;
+}
+
+.pagination-arrow-container {
+  display: flex;
+  align-items: center;
+}

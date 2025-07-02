@@ -21,6 +21,8 @@ function ThreadList({ initialThreads }) {
   const [filteredThreads, setFilteredThreads] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortType, setSortType] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const threadsPerPage = 10;
 
   useEffect(() => {
     setFilteredThreads(sortThreads(threads, sortType));
@@ -47,6 +49,18 @@ function ThreadList({ initialThreads }) {
     return sorted;
   };
 
+  // Calculate pagination
+  const indexOfLastThread = currentPage * threadsPerPage;
+  const indexOfFirstThread = indexOfLastThread - threadsPerPage;
+  const currentThreads = filteredThreads.slice(indexOfFirstThread, indexOfLastThread);
+  const totalPages = Math.ceil(filteredThreads.length / threadsPerPage);
+
+  // Handle page changes
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    console.log('Page changed to:', pageNumber);
+  };
+
   return (
     <>
       <div className="search-container">
@@ -60,13 +74,13 @@ function ThreadList({ initialThreads }) {
       </div>
       <div className="thread-stats">
         <div className="filters">
-          <button 
+          <button
             className={`filter-button ${sortType === 'newest' ? 'active' : ''}`}
             onClick={() => setSortType('newest')}
           >
             Newest
           </button>
-          <button 
+          <button
             className={`filter-button ${sortType === 'active' ? 'active' : ''}`}
             onClick={() => setSortType('active')}
           >
@@ -79,7 +93,7 @@ function ThreadList({ initialThreads }) {
         {filteredThreads.length === 0 ? (
           <p>No threads found</p>
         ) : (
-          filteredThreads.map(thread => {
+          currentThreads.map(thread => {
             const question = thread.messages?.[0] || {};
             const answerCount = thread.messages?.length - 1 || 0;
             const voteCount = (question.votes?.upvotes?.length - question.votes?.downvotes?.length) || 0;
@@ -109,6 +123,58 @@ function ThreadList({ initialThreads }) {
               </div>
             );
           })
+        )}
+
+        {/* Pagination Controls */}
+        {filteredThreads.length > 0 && (
+          <div className="pagination">
+            <div className="pagination-arrow-container">
+              <button className="pagination-arrow" onClick={() => paginate(1)} aria-label="Go to first page" disabled={currentPage === 1}>«</button>
+            </div>
+            <div className="pagination-numbers">
+              {(() => {
+                // Show 3 pages at a time
+                // If on page 1, show pages 1-3
+                // If on page 2, show pages 1-2-3 where 2 highlighted, etc.
+                let startPage, endPage;
+
+                if (totalPages <= 3) {
+                  // Fewer than 3 pages total, show them all
+                  startPage = 1;
+                  endPage = totalPages;
+                } else if (currentPage === 1) {
+                  startPage = 1;
+                  endPage = 3;
+                } else if (currentPage === totalPages) {
+                  startPage = totalPages - 2;
+                  endPage = totalPages;
+                } else {
+                  startPage = currentPage - 1;
+                  endPage = currentPage + 1;
+                }
+
+                // Generate array of page numbers to display
+                const pageNumbers = [];
+                for (let i = startPage; i <= endPage; i++) {
+                  pageNumbers.push(i);
+                }
+
+                return pageNumbers.map(number => (
+                  <button
+                    key={number}
+                    onClick={() => paginate(number)}
+                    disabled={currentPage === number}
+                    className={`pagination-number ${currentPage === number ? 'active' : ''}`}
+                  >
+                    {number}
+                  </button>
+                ));
+              })()}
+            </div>
+            <div className="pagination-arrow-container">
+              <button className="pagination-arrow" onClick={() => paginate(totalPages)} aria-label="Go to last page" disabled={currentPage === totalPages}>»</button>
+            </div>
+          </div>
         )}
       </div>
     </>
