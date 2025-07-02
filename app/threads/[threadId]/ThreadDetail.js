@@ -274,6 +274,7 @@ export default function ThreadDetail({ thread }) {
                   onClick={() => handleTipClick(question.ts, question.paymail)}
                   className="tip-jar-button"
                   aria-label="Send tip"
+                  disabled={!isConnected}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -378,6 +379,7 @@ export default function ThreadDetail({ thread }) {
                         onClick={() => handleTipClick(answer.ts, answer.paymail)}
                         className="tip-jar-button"
                         aria-label="Send tip"
+                        disabled={!isConnected}
                         style={{
                           background: 'none',
                           border: 'none',

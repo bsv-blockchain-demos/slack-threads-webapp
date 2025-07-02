@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import dbConnect from '../../../src/lib/db'
 import mongoose from 'mongoose';
-import { connectWallet, resolvePaymail } from '../../../src/components/walletServiceHooks';
+import { connectWallet } from '../../../src/components/walletServiceHooks';
+import { P2PKH, Hash } from '@bsv/sdk';
+import { PaymailClient } from '@bsv/paymail';
 
 export async function POST(req) {
     console.log('API tip route called');
@@ -31,17 +33,26 @@ export async function POST(req) {
         }
 
         const receiver = message?.user;
-        console.log('Receiver:', receiver);
+        console.log('Receiver:', receiver);   
 
-        // Temp to test Modal
-        return NextResponse.json({ success: true });    
+        //Create transaction using wallet publicKey and receiver PayMail
+        const paymailPubKey = resolvePaymail(paymail);
+        const paymailHash = Hash.sha256(paymailPubKey);
+        const paymailAddress = Hash.ripemd160(paymailHash);
+        console.log('Paymail address:', paymailAddress); 
 
-        // Create transaction using wallet publicKey and receiver PayMail
-        const paymailAddress = resolvePaymail(paymail);
-        const wallet = connectWallet();
+        const wallet = await connectWallet();
+
+        if (!wallet) {
+            return NextResponse.json({ error: 'Wallet not connected' }, { status: 400 });
+        }
 
         // Check wallet balance
         const balance = await wallet.getBalance();
+        console.log('Wallet balance:', balance);
+
+        // Temp to test Modal
+        return NextResponse.json({ success: true });
 
         if (balance < amount + 10) {
             return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
@@ -78,4 +89,10 @@ export async function POST(req) {
         console.error('Error processing tip:', error);
         return NextResponse.json({ error: 'Error processing tip' }, { status: 500 });
     }
+}
+
+async function resolvePaymail(paymail) {
+    const client = new PaymailClient();
+    const pki = await client.getPki(paymail);
+    return pki.pubkey;
 }
