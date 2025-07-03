@@ -291,14 +291,14 @@ export default function ThreadDetail({ thread }) {
                   }}
                   title="Send a tip"
                 >
-                  <img 
-                    src="/tip.svg" 
-                    width="32" 
-                    height="32" 
-                    alt="Tip jar" 
-                    style={{ 
+                  <img
+                    src="/tip.svg"
+                    width="32"
+                    height="32"
+                    alt="Tip jar"
+                    style={{
                       filter: 'invert(37%) sepia(74%) saturate(1090%) hue-rotate(189deg) brightness(91%) contrast(98%)',
-                    }} 
+                    }}
                   />
                 </button>
               )}
@@ -376,7 +376,7 @@ export default function ThreadDetail({ thread }) {
                     {/* Only show tip jar button if paymail is available */}
                     {answer.paymail && (
                       <button
-                        onClick={() => handleTipClick(answer.ts, answer.paymail)}
+                        onClick={() => handleTipClick(question.ts, question.paymail)}
                         className="tip-jar-button"
                         aria-label="Send tip"
                         disabled={!isConnected}
@@ -385,7 +385,7 @@ export default function ThreadDetail({ thread }) {
                           border: 'none',
                           cursor: 'pointer',
                           marginRight: 'var(--bsv-spacing-3)',
-                          marginTop: '16px',
+                          marginTop: '42px',
                           color: 'var(--bsv-primary)',
                           display: 'flex',
                           alignItems: 'center',
@@ -396,14 +396,14 @@ export default function ThreadDetail({ thread }) {
                         }}
                         title="Send a tip"
                       >
-                        <img 
-                          src="/tip.svg" 
-                          width="24" 
-                          height="24" 
-                          alt="Tip jar" 
-                          style={{ 
+                        <img
+                          src="/tip.svg"
+                          width="32"
+                          height="32"
+                          alt="Tip jar"
+                          style={{
                             filter: 'invert(37%) sepia(74%) saturate(1090%) hue-rotate(189deg) brightness(91%) contrast(98%)',
-                          }} 
+                          }}
                         />
                       </button>
                     )}

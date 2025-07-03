@@ -42,15 +42,16 @@ export async function POST(req) {
         }
 
         // Check wallet balance
-        const balance = await wallet.getBalance();
-        console.log('Wallet balance:', balance);
+        // const balance = await wallet.getBalance();
+        // console.log('Wallet balance:', balance);
 
-        if (balance < amount + 10) {
-            return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
-        }
+        // if (balance < amount + 10) {
+        //     return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+        // }
 
         //Create transaction using wallet publicKey and receiver PayMail
-        const paymailDestinations = resolvePaymail(paymail, amount);
+        const paymailDestinations = await resolvePaymail(paymail, amount);
+        console.log('Paymail destinations:', paymailDestinations);
         const reference = paymailDestinations.reference;
 
         const totalAmount = paymailDestinations.outputs.reduce((total, destination) => total + destination.satoshis, 0);
@@ -67,9 +68,9 @@ export async function POST(req) {
                 outputDescription: `Tip to ${paymail}`,
             })),
         });
-        const signedAction = await wallet.signAction(transaction);
+        //const signedAction = await wallet.signAction(transaction);
 
-        const txid = signedAction.txid;
+        const txid = transaction.txid;
 
         // Get tipsCollection
         const tipsCollection = mongoose.connection.db.collection('tips');
@@ -81,14 +82,14 @@ export async function POST(req) {
         await tipsCollection.updateOne(
             { _id: messageTS },
             {
-                $push: { 'tips': { fromPublicKey: publicKey, amount, to: receiver, receiverAddress: paymailAddress, timestamp, txid } }
+                $push: { 'tips': { fromPublicKey: senderPublicKey, amount, to: receiver, receiverAddress: reference, timestamp, txid } }
             },
             { upsert: true }
         )
 
         // Send transaction to paymail
-        const rawTx = Transaction.fromBEEF(signedAction.tx).toHex();
-        const response = await paymailSendTransaction(paymail, rawTx, reference);
+        const rawTx = Transaction.fromBEEF(transaction.tx).toHex();
+        const response = await paymailSendTransaction(paymail, rawTx, reference, senderPublicKey);
         console.log('Transaction response:', response);
 
         return NextResponse.json({ success: true });
@@ -104,8 +105,13 @@ async function resolvePaymail(paymail, amount) {
     return destination;
 }
 
-async function paymailSendTransaction(paymail, hex, reference) {
+async function paymailSendTransaction(paymail, hex, reference, senderPublicKey) {
     const client = new PaymailClient();
-    const response = await client.sendTransactionP2P(paymail, hex, reference);
+    const metadata = {
+        sender: 'Slack Threads',
+        pubkey: senderPublicKey,
+        note: 'Send tip to ' + paymail,
+    }
+    const response = await client.sendTransactionP2P(paymail, hex, reference, metadata);
     return response;
 }
