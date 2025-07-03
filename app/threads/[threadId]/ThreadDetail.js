@@ -326,8 +326,8 @@ export default function ThreadDetail({ thread }) {
 
         {answers.map((answer, index) => {
           const files = answer?.raw?.files || [];
-          const maxReactions = Math.max(...answers.map(a => a.reactions?.length || 0));
-          const isBestAnswer = answer.reactions?.length === maxReactions && maxReactions > 0;
+          const maxUpvotes = Math.max(...answers.map(a => a.votes.upvotes?.length || 0));
+          const isBestAnswer = answer.votes.upvotes?.length === maxUpvotes && maxUpvotes > 0;
 
           if (!answer.deleted) {
             return (
