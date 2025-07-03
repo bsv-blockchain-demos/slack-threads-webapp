@@ -38,8 +38,6 @@ export default async function ThreadsPage({ searchParams }) {
     })
   );
 
-  console.log('Response:', JSON.stringify(data, null, 2));
-
   return (
     <ThreadList
       initialThreads={data.threads}

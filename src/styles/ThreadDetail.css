@@ -140,8 +140,8 @@
 .markdown-content h4 { font-size: 1.2em; }
 
 .markdown-content code {
-  background-color: var(--bsv-bg-tertiary);
-  color: var(--bsv-primary);
+  background-color: var(--bsv-bg-gray);
+  color: var(--bsv-text-light);
   padding: 3px 8px;
   border-radius: var(--bsv-border-radius-sm);
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
@@ -152,8 +152,8 @@
 }
 
 .markdown-content pre {
-  background-color: var(--bsv-bg-tertiary);
-  color: var(--bsv-text-primary);
+  background-color: var(--bsv-bg-gray); 
+  color: var(--bsv-text-light); 
   padding: var(--bsv-spacing-3) var(--bsv-spacing-4);
   border-radius: var(--bsv-border-radius-md);
   overflow-x: auto;

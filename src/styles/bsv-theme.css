@@ -11,7 +11,8 @@
   --bsv-bg-primary: #FFFFFF;
   --bsv-bg-secondary: #F8F9FA;
   --bsv-bg-tertiary: #E9EFFF;  /* Light blue background */
-  --bsv-bg-accent: #F0F4FF;    /* Subtle blue accent */
+  --bsv-bg-accent: #F0F4FF;
+  --bsv-bg-gray: #495057;    /* Subtle blue accent */
   
   /* Text Colors */
   --bsv-text-primary: #212529;

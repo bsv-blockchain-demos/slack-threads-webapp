@@ -11,7 +11,9 @@ import { useRouter } from 'next/navigation';
 const convertSlackMarkdown = (text) => {
   if (!text) return '';
   let formatted = text.replace(/\*(\S[^*]*)\*/g, '**$1**');
-  formatted = formatted.replace(/```([^`]+)```/g, '~~~$1~~~');
+  formatted = formatted.replace(/```([\s\S]*?)```/g, (match, p1) => {
+    return `\n\`\`\`\n${p1.trim()}\n\`\`\`\n`;
+  });
   formatted = formatted.replace(/_(\S[^_]*)_/g, '*$1*');
   formatted = formatted.replace(/~(\S[^~]*)~/g, '~~$1~~');
   return formatted;
