@@ -1,6 +1,7 @@
 import ThreadList from '../src/components/ThreadList';
 import '../src/styles/HomePage.css';
 import dotenv from 'dotenv';
+import { getVotesByMessageTS } from '../src/lib/voteController';
 dotenv.config();
 
 export const dynamic = 'force-dynamic'; // Disable caching
@@ -18,7 +19,26 @@ export default async function ThreadsPage({ searchParams }) {
     cache: 'no-store',
   });
   const data = await res.json();
-  console.log('Response:', data);
+
+  // Check votes for each message
+  // Then add them into thread.messages
+  await Promise.all(
+    data.threads.map(async (thread) => {
+      await Promise.all(
+        thread.messages.map(async (message) => {
+          try {
+            const votes = await getVotesByMessageTS(message.ts);
+            message.votes = votes;
+          } catch (error) {
+            console.error(`Error processing message with ts=${message.ts}:`, error);
+            message.votes = { upvotes: [], downvotes: [] };
+          }
+        })
+      );
+    })
+  );
+
+  console.log('Response:', JSON.stringify(data, null, 2));
 
   return (
     <ThreadList

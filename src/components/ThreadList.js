@@ -56,7 +56,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
   const sortThreads = (list, type) => {
     const sorted = [...list];
     if (type === 'newest') {
-      return sorted.sort((a, b) => parseFloat(b.messages[0]?.ts) - parseFloat(a.messages[0]?.ts));
+      return sorted.sort((a, b) => parseFloat(b.saved_at) - parseFloat(a.saved_at));
     } else if (type === 'active') {
       return sorted.sort((a, b) => new Date(b.last_updated || b.messages[0]?.ts) - new Date(a.last_updated || a.messages[0]?.ts));
     }
