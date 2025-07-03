@@ -329,100 +329,102 @@ export default function ThreadDetail({ thread }) {
           const maxReactions = Math.max(...answers.map(a => a.reactions?.length || 0));
           const isBestAnswer = answer.reactions?.length === maxReactions && maxReactions > 0;
 
-          return (
-            <div key={index} className={`answer-section ${isBestAnswer ? 'best-answer' : ''}`}>
-              <div className="vote-container">
-                <button
-                  className={`vote-button ${optimisticUserVotes[answer.ts]?.upvoted ? 'voted' : ''}`}
-                  onClick={() => handleVote(answer.ts, 'upvotes')}
-                  disabled={!isConnected}
-                >▲</button>
-                <span className="vote-count">{optimisticVotes[answer.ts] !== undefined ? optimisticVotes[answer.ts] : (answer.votes?.upvotes?.length || 0) - (answer.votes?.downvotes?.length || 0)}</span>
-                <button
-                  className={`vote-button ${optimisticUserVotes[answer.ts]?.downvoted ? 'voted' : ''}`}
-                  onClick={() => handleVote(answer.ts, 'downvotes')}
-                  disabled={!isConnected}
-                >▼</button>
-              </div>
-              <div className="answer-content">
-                <div className="markdown-content">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {convertSlackMarkdown(answer.text || 'No content')}
-                  </ReactMarkdown>
+          if (!answer.deleted) {
+            return (
+              <div key={index} className={`answer-section ${isBestAnswer ? 'best-answer' : ''}`}>
+                <div className="vote-container">
+                  <button
+                    className={`vote-button ${optimisticUserVotes[answer.ts]?.upvoted ? 'voted' : ''}`}
+                    onClick={() => handleVote(answer.ts, 'upvotes')}
+                    disabled={!isConnected}
+                  >▲</button>
+                  <span className="vote-count">{optimisticVotes[answer.ts] !== undefined ? optimisticVotes[answer.ts] : (answer.votes?.upvotes?.length || 0) - (answer.votes?.downvotes?.length || 0)}</span>
+                  <button
+                    className={`vote-button ${optimisticUserVotes[answer.ts]?.downvoted ? 'voted' : ''}`}
+                    onClick={() => handleVote(answer.ts, 'downvotes')}
+                    disabled={!isConnected}
+                  >▼</button>
                 </div>
-                {files.length > 0 && (
-                  <div className="answer-files">
-                    {files.map((file, fileIndex) => (
-                      <div key={`file_${index}_${fileIndex}`} className="answer-file">
-                        {file.url_private ? (
-                          <div className="answer-file-image">
-                            <SlackImage file={file} />
-                          </div>
-                        ) : (
-                          <div className="answer-file-placeholder">
-                            <span className="file-icon">📁</span>
-                            <div className="file-info">
-                              <span className="file-name">{file.name || 'File'}</span>
-                              <span className="file-type">{file.mimetype || 'Unknown type'}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                <div className="answer-content">
+                  <div className="markdown-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {convertSlackMarkdown(answer.text || 'No content')}
+                    </ReactMarkdown>
                   </div>
-                )}
-                {answer.userInfo && (
-                  <div className="user-card">
-                    {/* Only show tip jar button if paymail is available */}
-                    {answer.paymail && (
-                      <button
-                        onClick={() => handleTipClick(question.ts, question.paymail)}
-                        className="tip-jar-button"
-                        aria-label="Send tip"
-                        disabled={!isConnected}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          marginRight: 'var(--bsv-spacing-3)',
-                          marginTop: '42px',
-                          color: 'var(--bsv-primary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          padding: 'var(--bsv-spacing-1)',
-                          borderRadius: '50%',
-                          transition: 'transform var(--bsv-transition-fast), background-color var(--bsv-transition-fast)',
-                        }}
-                        title="Send a tip"
-                      >
-                        <img
-                          src="/tip.svg"
-                          width="32"
-                          height="32"
-                          alt="Tip jar"
+                  {files.length > 0 && (
+                    <div className="answer-files">
+                      {files.map((file, fileIndex) => (
+                        <div key={`file_${index}_${fileIndex}`} className="answer-file">
+                          {file.url_private ? (
+                            <div className="answer-file-image">
+                              <SlackImage file={file} />
+                            </div>
+                          ) : (
+                            <div className="answer-file-placeholder">
+                              <span className="file-icon">📁</span>
+                              <div className="file-info">
+                                <span className="file-name">{file.name || 'File'}</span>
+                                <span className="file-type">{file.mimetype || 'Unknown type'}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {answer.userInfo && (
+                    <div className="user-card">
+                      {/* Only show tip jar button if paymail is available */}
+                      {answer.paymail && (
+                        <button
+                          onClick={() => handleTipClick(question.ts, question.paymail)}
+                          className="tip-jar-button"
+                          aria-label="Send tip"
+                          disabled={!isConnected}
                           style={{
-                            filter: 'invert(37%) sepia(74%) saturate(1090%) hue-rotate(189deg) brightness(91%) contrast(98%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            marginRight: 'var(--bsv-spacing-3)',
+                            marginTop: '42px',
+                            color: 'var(--bsv-primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 'var(--bsv-spacing-1)',
+                            borderRadius: '50%',
+                            transition: 'transform var(--bsv-transition-fast), background-color var(--bsv-transition-fast)',
                           }}
-                        />
-                      </button>
-                    )}
-                    <div className="user-info">
-                      <div className="user-avatar">
-                        {answer.userInfo.real_name?.[0]?.toUpperCase() || 'U'}
-                      </div>
-                      <div>
-                        <div className="user-name">{answer.userInfo.real_name}</div>
-                        <div className="user-timestamp">
-                          answered {answer.ts ? new Date(answer.ts * 1000).toLocaleString() : 'unknown'}
+                          title="Send a tip"
+                        >
+                          <img
+                            src="/tip.svg"
+                            width="32"
+                            height="32"
+                            alt="Tip jar"
+                            style={{
+                              filter: 'invert(37%) sepia(74%) saturate(1090%) hue-rotate(189deg) brightness(91%) contrast(98%)',
+                            }}
+                          />
+                        </button>
+                      )}
+                      <div className="user-info">
+                        <div className="user-avatar">
+                          {answer.userInfo.real_name?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                        <div>
+                          <div className="user-name">{answer.userInfo.real_name}</div>
+                          <div className="user-timestamp">
+                            answered {answer.ts ? new Date(answer.ts * 1000).toLocaleString() : 'unknown'}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          );
+            )
+          };
         })}
       </div>
 
