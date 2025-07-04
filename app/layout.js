@@ -7,6 +7,7 @@ import '../src/styles/App.css';
 import '../src/styles/HomePage.css';
 import '../src/styles/ThreadDetail.css';
 import ToasterWrapper from '../src/components/toast';
+import { EmojiProvider } from '../src/context/EmojiContext';
 
 export const metadata = {
   title: 'Slack Threads',
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
+        <EmojiProvider>
         <nav className="navbar">
           <div className="navbar-container">
             <Link href="/" className="navbar-brand">
@@ -28,6 +30,7 @@ export default function RootLayout({ children }) {
           {children}
           <ToasterWrapper />
         </main>
+        </EmojiProvider>
       </body>
     </html>
   );

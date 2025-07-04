@@ -9,6 +9,9 @@ import { connectWallet, signVote } from '../../../src/components/walletServiceHo
 import { useState, useEffect, useRef } from 'react';
 import { Random, Utils } from '@bsv/sdk';
 import { toast } from 'react-hot-toast';
+import { renderSlackStyleEmojis } from '../../../src/lib/renderEmojis';
+import { useEmojiMap } from '../../../src/context/EmojiContext';
+import rehypeRaw from 'rehype-raw';
 
 import Modal from './Modal';
 
@@ -30,6 +33,8 @@ export default function ThreadDetail({ thread }) {
   const answers = thread?.messages?.slice(1) || [];
 
   const hasAlertedRef = useRef(false);
+
+  const emojiMap = useEmojiMap();
 
   useEffect(() => {
     const initWallet = async () => {
@@ -228,8 +233,8 @@ export default function ThreadDetail({ thread }) {
       <div className="thread-header">
         <h1>
           {question ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {convertSlackMarkdown(question.text)}
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+              {renderSlackStyleEmojis(convertSlackMarkdown(question.text), emojiMap)}
             </ReactMarkdown>
           ) : (
             'No question'
@@ -266,8 +271,8 @@ export default function ThreadDetail({ thread }) {
         <div className="question-content">
           <div className="markdown-content">
             {question && (
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {convertSlackMarkdown(question.text)}
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {renderSlackStyleEmojis(convertSlackMarkdown(question.text), emojiMap)}
               </ReactMarkdown>
             )}
           </div>
@@ -352,8 +357,8 @@ export default function ThreadDetail({ thread }) {
                 </div>
                 <div className="answer-content">
                   <div className="markdown-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {convertSlackMarkdown(answer.text || 'No content')}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                      {convertSlackMarkdown(renderSlackStyleEmojis(answer.text || 'No content', emojiMap))}
                     </ReactMarkdown>
                   </div>
                   {files.length > 0 && (

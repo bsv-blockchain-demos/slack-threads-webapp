@@ -1,4 +1,4 @@
-import { Script, WalletClient, Utils } from '@bsv/sdk';        
+import { WalletClient, Utils } from '@bsv/sdk';        
 
 export async function connectWallet() {
     // Connect to wallet with BEEF capabilities
