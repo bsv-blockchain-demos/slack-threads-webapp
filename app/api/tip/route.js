@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import dbConnect from '../../../src/lib/db'
 import mongoose from 'mongoose';
 import { connectWallet } from '../../../src/components/walletServiceHooks';
-import { Transaction } from '@bsv/sdk';
+import { Transaction, Utils, Random } from '@bsv/sdk';
 import { PaymailClient } from '@bsv/paymail';
 
 export async function POST(req) {
@@ -107,10 +107,21 @@ async function resolvePaymail(paymail, amount) {
 
 async function paymailSendTransaction(paymail, hex, reference, senderPublicKey) {
     const client = new PaymailClient();
+    const wallet = await connectWallet();
+
+    const keyID = Utils.toHex(Random(8));
+
+    // const { signature } = await wallet.createSignature({
+    //         data: Utils.toArray("tip", "utf8"),
+    //         keyID: keyID,
+    //         protocolID: [0, 'slackthreads'],
+    //     });
+
     const metadata = {
         sender: 'Slack Threads',
         pubkey: senderPublicKey,
         note: 'Send tip to ' + paymail,
+        //signature: signature,
     }
     const response = await client.sendTransactionP2P(paymail, hex, reference, metadata);
     return response;

@@ -11,19 +11,34 @@ export default async function ThreadsPage({ searchParams }) {
 
   search = search || '';
   page = Number(page) || 1;
-  limit = Number(limit) || 10;
+  limit = 10;
 
   // Fetch your threads from your API route (or directly call your DB function)
-  const res = await fetch(`http://localhost:${process.env.PORT}/api/threads?search=${encodeURIComponent(search)}&page=${page}&limit=${limit}`, {
+  const res = await fetch(`${process.env.HOST}:${process.env.PORT}/api/threads?search=${encodeURIComponent(search)}&page=${page}&limit=${limit}`, {
     // Make sure this fetch is from server, no caching to keep fresh data
     cache: 'no-store',
   });
   const data = await res.json();
 
+  const verifyUrl = `${process.env.HOST}:${process.env.PORT}/api/verify`;
+
   // Check votes for each message
   // Then add them into thread.messages
   await Promise.all(
     data.threads.map(async (thread) => {
+
+      // Check integrity of thread
+      const integrityCheck = await fetch(verifyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          thread,
+        }),
+      });
+      const integrityData = await integrityCheck.json();
+      
+      thread.verified = integrityData.success || false;
+
       await Promise.all(
         thread.messages.map(async (message) => {
           try {

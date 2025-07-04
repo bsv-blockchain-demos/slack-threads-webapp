@@ -240,6 +240,11 @@ export default function ThreadDetail({ thread }) {
             asked {thread.saved_at ? new Date(thread.saved_at).toLocaleString() : 'unknown date'}
           </span>
           <span>by {thread.saved_by_info?.real_name || 'Anonymous'}</span>
+          {thread.verified ? (
+            <span className="verified">Verified</span>
+          ) : (
+            <span className="unverified">Unverified</span>
+          )}
         </div>
       </div>
 

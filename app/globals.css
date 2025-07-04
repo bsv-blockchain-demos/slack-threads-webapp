@@ -25,3 +25,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom styles */
+.verified {
+  background-color: green;
+  color: white;
+  border-radius: 4px;
+}
+
+.unverified {
+  background-color: red;
+  color: white;
+  border-radius: 4px;
+}
