@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { renderSlackStyleEmojis } from '../lib/renderEmojis';
+import { renderSlackStyleEmojis } from './renderEmojis';
 import { useEmojiMap } from '../context/EmojiContext';
 import rehypeRaw from 'rehype-raw';
 

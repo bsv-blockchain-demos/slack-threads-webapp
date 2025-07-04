@@ -9,7 +9,7 @@ import { connectWallet, signVote } from '../../../src/components/walletServiceHo
 import { useState, useEffect, useRef } from 'react';
 import { Random, Utils } from '@bsv/sdk';
 import { toast } from 'react-hot-toast';
-import { renderSlackStyleEmojis } from '../../../src/lib/renderEmojis';
+import { renderSlackStyleEmojis } from '../../../src/components/renderEmojis';
 import { useEmojiMap } from '../../../src/context/EmojiContext';
 import rehypeRaw from 'rehype-raw';
 

@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { Hash, Utils, LookupResolver } from '@bsv/sdk';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const randomSecret = process.env.RANDOM_SECRET;
 
 export async function POST(req) {
     try {
@@ -12,7 +16,7 @@ export async function POST(req) {
 
         // Create fileHash to compare with txFileHash
         const filteredThread = createFilteredThreadInfo({ thread_ts: thread.ts, channel: thread.channel, saved_by: thread.saved_by, messages: thread.messages });
-        const fileHash = Hash.sha256(Utils.toArray(JSON.stringify(filteredThread), "utf8"));
+        const fileHash = Hash.sha256(Utils.toArray(JSON.stringify(filteredThread) + randomSecret, "utf8"));
 
         // Get transaction from overlay
         const overlay = new LookupResolver()

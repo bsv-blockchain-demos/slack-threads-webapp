@@ -105,23 +105,24 @@ async function resolvePaymail(paymail, amount) {
     return destination;
 }
 
-async function paymailSendTransaction(paymail, hex, reference, senderPublicKey) {
+async function paymailSendTransaction(paymail, hex, reference) {
     const client = new PaymailClient();
     const wallet = await connectWallet();
-
     const keyID = Utils.toHex(Random(8));
+    
+    const derivedPublicKey = await wallet.getPublicKey({ protocolID: [0, 'slackthreads'], keyID });
 
-    // const { signature } = await wallet.createSignature({
-    //         data: Utils.toArray("tip", "utf8"),
-    //         keyID: keyID,
-    //         protocolID: [0, 'slackthreads'],
-    //     });
+    const { signature } = await wallet.createSignature({
+            data: Utils.toArray("tip", "utf8"),
+            keyID: keyID,
+            protocolID: [0, 'slackthreads'],
+        });
 
     const metadata = {
         sender: 'Slack Threads',
-        pubkey: senderPublicKey,
+        pubkey: derivedPublicKey.publicKey,
         note: 'Send tip to ' + paymail,
-        //signature: signature,
+        signature: signature,
     }
     const response = await client.sendTransactionP2P(paymail, hex, reference, metadata);
     return response;
