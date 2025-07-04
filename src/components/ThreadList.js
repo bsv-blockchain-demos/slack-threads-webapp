@@ -6,6 +6,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { renderSlackStyleEmojis } from '../lib/renderEmojis';
+import { useEmojiMap } from '../context/EmojiContext';
+import rehypeRaw from 'rehype-raw';
 
 // Move the convertSlackMarkdown function outside of the component so it can be exported
 const convertSlackMarkdown = (text) => {
@@ -30,6 +33,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
   const totalPages = Math.ceil(total / threadsPerPage);
 
   const router = useRouter();
+  const { emojiMap } = useEmojiMap();
 
   // Sync state when props change
   useEffect(() => {
@@ -120,8 +124,8 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
                 </div>
                 <div className="thread-content-col">
                   <Link href={`/threads/${thread._id}`} className="thread-title">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {convertSlackMarkdown(question.text || 'No title')}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                      {convertSlackMarkdown(renderSlackStyleEmojis(question.text || 'No title'), emojiMap)}
                     </ReactMarkdown>
                   </Link>
                   <div className="thread-meta">
