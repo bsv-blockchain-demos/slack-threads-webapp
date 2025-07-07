@@ -89,7 +89,7 @@ export async function POST(req) {
 
         // Send transaction to paymail
         const rawTx = Transaction.fromBEEF(transaction.tx).toHex();
-        const response = await paymailSendTransaction(paymail, rawTx, reference, senderPublicKey);
+        const response = await paymailSendTransaction(paymail, rawTx, reference, txid);
         console.log('Transaction response:', response);
 
         return NextResponse.json({ success: true });
@@ -105,14 +105,18 @@ async function resolvePaymail(paymail, amount) {
     return destination;
 }
 
-async function paymailSendTransaction(paymail, hex, reference) {
+async function paymailSendTransaction(paymail, hex, reference, txid) {
     const client = new PaymailClient();
     const wallet = await connectWallet();
     const keyID = Utils.toHex(Random(8));
+
+    const txArray = Utils.toArray(txid, 'utf8');
+    const txHash = Utils.hash256(txArray);
     
     const derivedPublicKey = await wallet.getPublicKey({ protocolID: [0, 'slackthreads'], keyID });
 
     const { signature } = await wallet.createSignature({
+        hashToDirectlySign: txHash,
             data: Utils.toArray("tip", "utf8"),
             keyID: keyID,
             protocolID: [0, 'slackthreads'],
