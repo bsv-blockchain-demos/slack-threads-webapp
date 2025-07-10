@@ -16,7 +16,7 @@ export async function POST(req) {
 
         // Create fileHash to compare with txFileHash
         const filteredThread = createFilteredThreadInfo({ thread_ts: thread.ts, channel: thread.channel, saved_by: thread.saved_by, messages: thread.messages });
-        const fileHash = Hash.sha256(Utils.toArray(JSON.stringify(filteredThread) + randomSecret, "utf8"));
+        const fileHash = Hash.hash256(Utils.toArray(JSON.stringify(filteredThread) + randomSecret, "utf8"));
 
         // Get transaction from overlay
         const overlay = new LookupResolver()
