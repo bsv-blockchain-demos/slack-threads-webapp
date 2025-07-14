@@ -15,7 +15,7 @@ export async function POST(req) {
         }
 
         // Create fileHash to compare with txFileHash
-        const filteredThread = createFilteredThreadInfo({ thread_ts: thread.ts, channel: thread.channel, saved_by: thread.saved_by, messages: thread.messages });
+        const filteredThread = createFilteredThreadInfo({ thread_ts: thread.ts, channel: thread.channel, saved_by: thread.saved_by, last_updated: thread.last_updated, messages: thread.messages });
         const fileHash = Hash.hash256(Utils.toArray(JSON.stringify(filteredThread) + randomSecret, "utf8"));
 
         // Get transaction from overlay
@@ -51,11 +51,12 @@ function filterThreadMessages(messages) {
     return messages.map(({ text, ts }) => ({ text, ts }));
 }
 
-function createFilteredThreadInfo({ thread_ts, channel, saved_by, messages }) {
+function createFilteredThreadInfo({ thread_ts, channel, saved_by, last_updated, messages }) {
     return {
         thread_ts,
         channel,
         saved_by,
+        last_updated,
         messages: filterThreadMessages(messages),
     };
 }
