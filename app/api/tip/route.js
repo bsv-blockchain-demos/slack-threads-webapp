@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import dbConnect from '../../../src/lib/db'
 import mongoose from 'mongoose';
 import { connectWallet } from '../../../src/components/walletServiceHooks';
-import { Transaction, Utils, Random } from '@bsv/sdk';
+import { Transaction, Utils, Random, Hash } from '@bsv/sdk';
 import { PaymailClient } from '@bsv/paymail';
 
 export async function POST(req) {
@@ -111,7 +111,7 @@ async function paymailSendTransaction(paymail, hex, reference, txid) {
     const keyID = Utils.toHex(Random(8));
 
     const txArray = Utils.toArray(txid, 'utf8');
-    const txHash = Utils.hash256(txArray);
+    const txHash = Hash.hash256(txArray);
     
     const derivedPublicKey = await wallet.getPublicKey({ protocolID: [0, 'slackthreads'], keyID });
 
