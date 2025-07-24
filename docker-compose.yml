@@ -10,8 +10,7 @@ services:
     environment:
       - NODE_ENV=production
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/slack-threads}
-      - HOST=${HOST:-http://localhost}
-      - PORT=${PORT:-3000}
+      - HOST=${HOST:-http://localhost:3000}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
       - RANDOM_SECRET=${RANDOM_SECRET}
     depends_on:
