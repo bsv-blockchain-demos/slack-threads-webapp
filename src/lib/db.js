@@ -21,6 +21,11 @@ async function dbConnect() {
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
+      serverApi: {
+        version: '1',
+        strict: true,
+        deprecationErrors: true
+      },
     }).then((mongoose) => mongoose);
   }
 
