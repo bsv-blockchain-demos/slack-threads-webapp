@@ -20,6 +20,8 @@ async function dbConnect() {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
+      dbName: 'slackApp',
+      authSource: 'admin',
       bufferCommands: false,
       serverApi: {
         version: '1',
