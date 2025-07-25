@@ -9,6 +9,7 @@ import { connectWallet, signVote } from '../../../src/components/walletServiceHo
 import { useState, useEffect, useRef } from 'react';
 import { Random, Utils } from '@bsv/sdk';
 import { toast } from 'react-hot-toast';
+import { wrapSlackMentions, Mention } from '../../../src/components/renderMentions';
 import { renderSlackStyleEmojis } from '../../../src/components/renderEmojis';
 import { useEmojiMap } from '../../../src/context/EmojiContext';
 import rehypeRaw from 'rehype-raw';
@@ -227,14 +228,47 @@ export default function ThreadDetail({ thread }) {
     }
   };
 
+  useEffect(() => {
+    async function convertMentions(thread) {
+      const allUsersInThread = thread.messages.map((msg) => msg.userInfo);
+    
+      for (const message of thread.messages) {
+        if (!message.text) continue;
+    
+        const mentionRegex = /<@([A-Z0-9]+)>/g;
+        const mentionedUserIds = [...message.text.matchAll(mentionRegex)].map(m => m[1]);
+    
+        if (mentionedUserIds.length === 0) continue;
+    
+        const userIdToNameMap = {};
+    
+        for (const userId of mentionedUserIds) {
+          if (userIdToNameMap[userId]) continue;
+    
+          const matchedUser = allUsersInThread.find((u) => u.id === userId);
+          userIdToNameMap[userId] = matchedUser?.real_name || "UnknownUser";
+        }
+        console.log('userIdToNameMap', userIdToNameMap);
+    
+        // Replace mentions in the message text
+        message.text = message.text.replace(mentionRegex, (_, userId) => {
+          return `<@${userIdToNameMap[userId]}>`;
+        });
+      }
+    }
+    convertMentions(thread);
+  }, []);
+
   return (
     <div className="thread-detail-container">
       {/* Question Header */}
       <div className="thread-header">
         <h1>
           {question ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-              {renderSlackStyleEmojis(convertSlackMarkdown(question.text), emojiMap)}
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={{
+              mention: Mention,
+            }}>
+              {wrapSlackMentions(convertSlackMarkdown(renderSlackStyleEmojis(question.text || 'No content', emojiMap)))}
             </ReactMarkdown>
           ) : (
             'No question'
@@ -244,7 +278,7 @@ export default function ThreadDetail({ thread }) {
           <span>
             asked {thread.saved_at ? new Date(thread.saved_at).toLocaleString() : 'unknown date'}
           </span>
-          <span>by {thread.saved_by_info?.real_name || 'Anonymous'}</span>
+          <span>by {question.userInfo.real_name || 'Anonymous'}</span>
           {thread.verified ? (
             <span className="verified">Verified</span>
           ) : (
@@ -271,8 +305,10 @@ export default function ThreadDetail({ thread }) {
         <div className="question-content">
           <div className="markdown-content">
             {question && (
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                {renderSlackStyleEmojis(convertSlackMarkdown(question.text), emojiMap)}
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={{
+                mention: Mention,
+              }}>
+                {wrapSlackMentions(renderSlackStyleEmojis(convertSlackMarkdown(question.text), emojiMap))}
               </ReactMarkdown>
             )}
           </div>
@@ -357,8 +393,10 @@ export default function ThreadDetail({ thread }) {
                 </div>
                 <div className="answer-content">
                   <div className="markdown-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                      {convertSlackMarkdown(renderSlackStyleEmojis(answer.text || 'No content', emojiMap))}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={{
+                      mention: Mention,
+                    }}>
+                      {wrapSlackMentions(convertSlackMarkdown(renderSlackStyleEmojis(answer.text || 'No content', emojiMap)))}
                     </ReactMarkdown>
                   </div>
                   {files.length > 0 && (

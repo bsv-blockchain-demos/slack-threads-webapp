@@ -6,6 +6,11 @@
   width: 85%;
   animation: bsv-fade-in var(--bsv-transition-normal) forwards;
 }
+@media (max-width: 768px) {
+  .thread-detail-container {
+    padding: 0;
+  }
+}
 
 .thread-header {
   margin-bottom: var(--bsv-spacing-5);
@@ -39,6 +44,12 @@
   color: var(--bsv-text-tertiary);
   font-size: 14px;
   align-items: center;
+}
+@media (max-width: 768px) {
+  .thread-metadata {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .thread-metadata span {

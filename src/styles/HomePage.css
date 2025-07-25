@@ -294,7 +294,7 @@
 .pagination-button {
   padding: 8px 12px;
   border: 1px solid #ddd;
-  background-color: #f8f8f8;
+  background-color: white;
   cursor: pointer;
   border-radius: 4px;
 }
@@ -311,7 +311,8 @@
   align-items: center;
   justify-content: center;
   border: 1px solid #ddd;
-  background-color: #f8f8f8;
+  background-color: white;
+  color: var(--bsv-primary);
   cursor: pointer;
   border-radius: 4px;
 }

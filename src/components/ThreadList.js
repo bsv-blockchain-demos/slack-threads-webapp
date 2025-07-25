@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { wrapSlackMentions, Mention } from './renderMentions';
 import { renderSlackStyleEmojis } from './renderEmojis';
 import { useEmojiMap } from '../context/EmojiContext';
 import rehypeRaw from 'rehype-raw';
@@ -58,6 +59,41 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
   useEffect(() => {
     setFilteredThreads(sortThreads(threads, sortType));
   }, [sortType, threads]);
+
+  useEffect(() => {
+    async function convertUserMentions() {
+      await Promise.all(
+        threads.map(async (thread) => {
+          const allUsersInThread = thread.messages.map((msg) => msg.userInfo);
+  
+          for (const message of thread.messages) {
+            if (!message.text) continue;
+  
+            const mentionRegex = /<@([A-Z0-9]+)>/g;
+            const mentionedUserIds = [...message.text.matchAll(mentionRegex)].map(m => m[1]);
+  
+            if (mentionedUserIds.length === 0) continue;
+  
+            const userIdToNameMap = {};
+  
+            for (const userId of mentionedUserIds) {
+              if (userIdToNameMap[userId]) continue; // skip if already mapped
+  
+              const matchedUser = allUsersInThread.find(u => u.id === userId);
+              userIdToNameMap[userId] = matchedUser?.real_name || 'UnknownUser';
+            }
+  
+            // Replace mentions in text
+            message.text = message.text.replace(mentionRegex, (_, userId) => {
+              return `<@${userIdToNameMap[userId]}>`;
+            });
+          }
+        })
+      );
+    }
+  
+    convertUserMentions();
+  }, [threads]);
 
   const sortThreads = (list, type) => {
     const sorted = [...list];
@@ -124,8 +160,10 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
                 </div>
                 <div className="thread-content-col">
                   <Link href={`/threads/${thread._id}`} className="thread-title">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                      {convertSlackMarkdown(renderSlackStyleEmojis(question.text || 'No title'), emojiMap)}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={{
+                      mention: Mention,
+                    }}>
+                      {wrapSlackMentions(convertSlackMarkdown(renderSlackStyleEmojis(question.text || 'No title'), emojiMap))}
                     </ReactMarkdown>
                   </Link>
                   <div className="thread-meta">
