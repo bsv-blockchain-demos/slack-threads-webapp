@@ -27,7 +27,7 @@ export default async function ThreadsPage({ searchParams }) {
   limit = 10;
 
   // Fetch your threads from your API route (or directly call your DB function)
-  const res = await fetch(`${process.env.HOST}/api/threads?search=${encodeURIComponent(search)}&page=${page}&limit=${limit}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/threads?search=${encodeURIComponent(search)}&page=${page}&limit=${limit}`, {
     // Make sure this fetch is from server, no caching to keep fresh data
     cache: 'no-store',
   });
