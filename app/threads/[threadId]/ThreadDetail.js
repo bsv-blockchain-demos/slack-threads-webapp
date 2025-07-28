@@ -93,8 +93,6 @@ export default function ThreadDetail({ thread }) {
           upvoted: question.votes?.upvotes?.some(vote => vote.publicKey === userPublicKey) || false,
           downvoted: question.votes?.downvotes?.some(vote => vote.publicKey === userPublicKey) || false
         };
-
-        console.log(`Initializing question vote count: ${upvotes} - ${downvotes} = ${initialVotes[question.ts]}`);
       }
 
       // Initialize for answers
@@ -108,14 +106,42 @@ export default function ThreadDetail({ thread }) {
           downvoted: answer.votes?.downvotes?.some(vote => vote.publicKey === userPublicKey) || false
         };
 
-        console.log(`Initializing answer ${answer.ts} vote count: ${upvotes} - ${downvotes} = ${initialVotes[answer.ts]}`);
       });
 
       setOptimisticVotes(initialVotes);
       setOptimisticUserVotes(initialUserVotes);
-      console.log('Optimistic votes initialized:', initialVotes);
     }
   }, [thread, userPublicKey]);
+
+  useEffect(() => {
+    async function convertMentions(thread) {
+      const allUsersInThread = thread.messages.map((msg) => msg.userInfo);
+
+      for (const message of thread.messages) {
+        if (!message.text) continue;
+
+        const mentionRegex = /<@([A-Z0-9]+)>/g;
+        const mentionedUserIds = [...message.text.matchAll(mentionRegex)].map(m => m[1]);
+
+        if (mentionedUserIds.length === 0) continue;
+
+        const userIdToNameMap = {};
+
+        for (const userId of mentionedUserIds) {
+          if (userIdToNameMap[userId]) continue;
+
+          const matchedUser = allUsersInThread.find((u) => u.id === userId);
+          userIdToNameMap[userId] = matchedUser?.real_name || "UnknownUser";
+        }
+
+        // Replace mentions in the message text
+        message.text = message.text.replace(mentionRegex, (_, userId) => {
+          return `<@${userIdToNameMap[userId]}>`;
+        });
+      }
+    }
+    convertMentions(thread);
+  }, []);
 
   if (!thread) return <div className="error">Thread not found</div>;
 
@@ -143,8 +169,6 @@ export default function ThreadDetail({ thread }) {
         : (isUpvoted ? -2 : -1);
     }
 
-    console.log(`${direction === 'upvotes' ? 'Upvote' : 'Downvote'} action on ${messageTS}: currently upvoted=${isUpvoted}, downvoted=${isDownvoted}, vote change=${voteChange}`);
-
     // Update optimistic UI
     setOptimisticUserVotes(prev => {
       const newState = { ...prev };
@@ -158,7 +182,6 @@ export default function ThreadDetail({ thread }) {
     setOptimisticVotes(prev => {
       const currentCount = prev[messageTS] ?? 0;
       const newCount = currentCount + voteChange;
-      console.log(`Updating vote count for ${messageTS}: ${currentCount} + ${voteChange} = ${newCount}`);
       return { ...prev, [messageTS]: newCount };
     });
 
@@ -228,37 +251,6 @@ export default function ThreadDetail({ thread }) {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    async function convertMentions(thread) {
-      const allUsersInThread = thread.messages.map((msg) => msg.userInfo);
-    
-      for (const message of thread.messages) {
-        if (!message.text) continue;
-    
-        const mentionRegex = /<@([A-Z0-9]+)>/g;
-        const mentionedUserIds = [...message.text.matchAll(mentionRegex)].map(m => m[1]);
-    
-        if (mentionedUserIds.length === 0) continue;
-    
-        const userIdToNameMap = {};
-    
-        for (const userId of mentionedUserIds) {
-          if (userIdToNameMap[userId]) continue;
-    
-          const matchedUser = allUsersInThread.find((u) => u.id === userId);
-          userIdToNameMap[userId] = matchedUser?.real_name || "UnknownUser";
-        }
-        console.log('userIdToNameMap', userIdToNameMap);
-    
-        // Replace mentions in the message text
-        message.text = message.text.replace(mentionRegex, (_, userId) => {
-          return `<@${userIdToNameMap[userId]}>`;
-        });
-      }
-    }
-    convertMentions(thread);
-  }, []);
 
   return (
     <div className="thread-detail-container">
