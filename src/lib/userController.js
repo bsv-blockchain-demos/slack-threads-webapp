@@ -14,3 +14,18 @@ export async function getUserById(userId) {
     return null;
   }
 }
+
+export async function getUsersByIdBatch(userIds) {
+  const usersCollection = mongoose.connection.db.collection('users');
+
+  const docs = await usersCollection
+    .find({ _id: { $in: userIds.map(id => id) } })
+    .toArray();
+
+  const result = {};
+  for (const user of docs) {
+    result[user._id] = user;
+  }
+
+  return result;
+}

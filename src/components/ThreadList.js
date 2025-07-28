@@ -41,27 +41,33 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
 
   useEffect(() => {
     async function verifyThreads(threads) {
-      // Check integrity of thread
-      await Promise.all(
-        threads.map(async (thread) => {
-          // Check verified map from context first before calling API
-          if (thread._id in verifiedMap) {
-            return;
+      try {
+        if (!threads || threads.length === 0) return;
+
+        const threadsToVerify = threads.filter(
+          (thread) => !(thread._id in verifiedMap)
+        );
+
+        if (threadsToVerify.length === 0) return;
+
+        const res = await fetch(verifyUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threads: threadsToVerify }),
+        });
+
+        if (!res.ok) throw new Error('Failed to verify threads');
+
+        const data = await res.json();
+
+        if (data?.results) {
+          for (const { threadId, success } of data.results) {
+            setVerified(threadId, success || false);
           }
-
-          const integrityCheck = await fetch(verifyUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              thread,
-            }),
-          });
-          const integrityData = await integrityCheck.json();
-
-          const verified = integrityData.success || false;
-          setVerified(thread._id, verified);
-        })
-      );
+        }
+      } catch (error) {
+        console.error('Thread verification error:', error);
+      }
     }
 
     verifyThreads(threads);

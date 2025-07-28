@@ -4,8 +4,8 @@ import '../../../src/styles/ThreadDetail.css';
 
 import dbConnect from '../../../src/lib/db';
 import { getThreadById } from '../../../src/lib/threadController';
-import { getUserById } from '../../../src/lib/userController';
-import { getVotesByMessageTS } from '../../../src/lib/voteController';
+import { getUsersByIdBatch } from '../../../src/lib/userController';
+import { getVotesByMessageTSBatch } from '../../../src/lib/voteController';
 
 export const dynamic = 'force-dynamic'; // to disable caching
 
@@ -46,23 +46,19 @@ export default async function ThreadPage({ params }) {
 
     // Check PayMail and votes for each message
     // Then add them into thread.messages
-    await Promise.all(
-      thread.messages.map(async (message) => {
-        try {
-          const [user, votes] = await Promise.all([
-            getUserById(message.user),
-            getVotesByMessageTS(message.ts)
-          ]);
+    const userIDs = [...new Set(thread.messages.map(m => m.user))];
+    const userMap = await getUsersByIdBatch(userIDs);
+
+    const messageTSs = thread.messages.map(m => m.ts);
+    const voteMap = await getVotesByMessageTSBatch(messageTSs);
+
+    for (const message of thread.messages) {
+      const user = userMap[message.user?.toString()];
+      const votes = voteMap[message.ts];
     
-          message.paymail = user?.paymail || null;
-          message.votes = votes;
-        } catch (error) {
-          console.error(`Error processing message with ts=${message.ts}:`, error);
-          message.paymail = null;
-          message.votes = { upvotes: [], downvotes: [] };
-        }
-      })
-    );
+      message.paymail = user?.paymail || null;
+      message.votes = votes || { upvotes: [], downvotes: [] };
+    }
 
     return (
       <>
