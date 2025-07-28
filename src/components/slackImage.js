@@ -21,8 +21,6 @@ export const SlackImage = ({ file }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    console.log('file:', file)
-
     useEffect(() => {
         const fetchImage = async () => {
             try {
