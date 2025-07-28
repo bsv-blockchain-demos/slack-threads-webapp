@@ -9,6 +9,30 @@ import { getVotesByMessageTS } from '../../../src/lib/voteController';
 
 export const dynamic = 'force-dynamic'; // to disable caching
 
+export async function generateMetadata({ params }) {
+  const { threadId } = await params;
+
+  try {
+    await dbConnect(); // Connect to MongoDB
+    const thread = await getThreadById(threadId); // Direct database access
+
+    if (!thread) {
+      throw new Error('Thread not found');
+    }
+
+    const tag = thread?.messages?.[0]?.text.slice(0, 60) || 'Unknown Thread';
+
+    return {
+      title: `Slack Threads - ${tag}`,
+    };
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+    return {
+      title: 'Slack Threads',
+    };
+  }
+}
+
 export default async function ThreadPage({ params }) {
   const { threadId } = await params;
 

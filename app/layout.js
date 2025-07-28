@@ -12,7 +12,7 @@ import { ThreadVerificationProvider } from '../src/context/threadVerifiedContext
 
 export const metadata = {
   title: 'Slack Threads',
-  description: 'Browse saved Slack threads',
+  description: 'Browse saved Slack threads from the BSVA Slack workspace',
 };
 
 export default function RootLayout({ children }) {

@@ -6,6 +6,19 @@ dotenv.config();
 
 export const dynamic = 'force-dynamic'; // Disable caching
 
+export async function generateMetadata({ searchParams }) {
+  let { search } = await searchParams;
+
+  search = search || '';
+
+  return {
+    title: search ? `Slack Threads - Search: ${search}` : 'Slack Threads - All Threads',
+    description: search
+      ? `Browse all Slack threads tagged with ${search}.`
+      : 'Browse all saved Slack thread discussions.',
+  };
+}
+
 export default async function ThreadsPage({ searchParams }) {
   let { search, page, limit } = await searchParams;
 
