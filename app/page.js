@@ -20,24 +20,10 @@ export default async function ThreadsPage({ searchParams }) {
   });
   const data = await res.json();
 
-  const verifyUrl = `${process.env.HOST}/api/verify`;
-
   // Check votes for each message
   // Then add them into thread.messages
   await Promise.all(
     data.threads.map(async (thread) => {
-
-      // Check integrity of thread
-      const integrityCheck = await fetch(verifyUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          thread,
-        }),
-      });
-      const integrityData = await integrityCheck.json();
-      
-      thread.verified = integrityData.success || false;
 
       await Promise.all(
         thread.messages.map(async (message) => {

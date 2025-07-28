@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { wrapSlackMentions, Mention } from './renderMentions';
 import { renderSlackStyleEmojis } from './renderEmojis';
 import { useEmojiMap } from '../context/EmojiContext';
+import { useThreadVerification } from '../context/threadVerifiedContext';
 import rehypeRaw from 'rehype-raw';
 
 // Move the convertSlackMarkdown function outside of the component so it can be exported
@@ -35,6 +36,36 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
 
   const router = useRouter();
   const { emojiMap } = useEmojiMap();
+  const { verifiedMap, setVerified } = useThreadVerification();
+  const verifyUrl = `${process.env.NEXT_PUBLIC_HOST}/api/verify`;
+
+  useEffect(() => {
+    async function verifyThreads(threads) {
+      // Check integrity of thread
+      await Promise.all(
+        threads.map(async (thread) => {
+          // Check verified map from context first before calling API
+          if (thread._id in verifiedMap) {
+            return;
+          }
+
+          const integrityCheck = await fetch(verifyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              thread,
+            }),
+          });
+          const integrityData = await integrityCheck.json();
+
+          const verified = integrityData.success || false;
+          setVerified(thread._id, verified);
+        })
+      );
+    }
+
+    verifyThreads(threads);
+  }, [currentPage]);
 
   // Sync state when props change
   useEffect(() => {
@@ -65,24 +96,24 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
       await Promise.all(
         threads.map(async (thread) => {
           const allUsersInThread = thread.messages.map((msg) => msg.userInfo);
-  
+
           for (const message of thread.messages) {
             if (!message.text) continue;
-  
+
             const mentionRegex = /<@([A-Z0-9]+)>/g;
             const mentionedUserIds = [...message.text.matchAll(mentionRegex)].map(m => m[1]);
-  
+
             if (mentionedUserIds.length === 0) continue;
-  
+
             const userIdToNameMap = {};
-  
+
             for (const userId of mentionedUserIds) {
               if (userIdToNameMap[userId]) continue; // skip if already mapped
-  
+
               const matchedUser = allUsersInThread.find(u => u.id === userId);
               userIdToNameMap[userId] = matchedUser?.real_name || 'UnknownUser';
             }
-  
+
             // Replace mentions in text
             message.text = message.text.replace(mentionRegex, (_, userId) => {
               return `<@${userIdToNameMap[userId]}>`;
@@ -91,7 +122,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
         })
       );
     }
-  
+
     convertUserMentions();
   }, [threads]);
 
@@ -148,7 +179,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
             const question = thread.messages?.[0] || {};
             const answerCount = thread.messages?.length - 1 || 0;
             const voteCount = (question.votes?.upvotes?.length - question.votes?.downvotes?.length) || 0;
-            
+
             return (
               <div key={thread._id} className="thread-summary">
                 <div className="vote-container">
@@ -167,7 +198,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
                     </ReactMarkdown>
                   </Link>
                   <div className="thread-meta">
-                    {thread.verified ? (
+                    {!!verifiedMap[thread._id]?.status ? (
                       <span className="verified">Verified</span>
                     ) : (
                       <span className="unverified">Unverified</span>
@@ -190,13 +221,17 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
               <button className="pagination-arrow" onClick={() => paginate(1)} aria-label="Go to first page" disabled={currentPage === 1}>«</button>
             </div>
             <div className="pagination-numbers">
-              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                let page = currentPage;
-                if (page === 1) page = i + 1;
-                else if (page === totalPages) page = totalPages - 2 + i;
-                else page = page - 1 + i;
+              {Array.from({ length: 3 }, (_, i) => {
+                // Calculate start page based on currentPage
+                let startPage = Math.max(1, currentPage - 1);
+                if (currentPage === totalPages) {
+                  startPage = Math.max(1, totalPages - 2);
+                } else if (currentPage === 1) {
+                  startPage = 1;
+                }
 
-                if (page < 1 || page > totalPages) return null;
+                const page = startPage + i;
+                if (page > totalPages) return null;
 
                 return (
                   <button

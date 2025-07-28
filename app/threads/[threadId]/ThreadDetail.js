@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 import { wrapSlackMentions, Mention } from '../../../src/components/renderMentions';
 import { renderSlackStyleEmojis } from '../../../src/components/renderEmojis';
 import { useEmojiMap } from '../../../src/context/EmojiContext';
+import { useThreadVerification } from '../../../src/context/threadVerifiedContext';
 import rehypeRaw from 'rehype-raw';
 
 import Modal from './Modal';
@@ -36,6 +37,7 @@ export default function ThreadDetail({ thread }) {
   const hasAlertedRef = useRef(false);
 
   const emojiMap = useEmojiMap();
+  const { verifiedMap } = useThreadVerification();
 
   useEffect(() => {
     const initWallet = async () => {
@@ -47,7 +49,6 @@ export default function ThreadDetail({ thread }) {
           if (!userPublicKey) {
             const publicKey = await walletInstance.getPublicKey({ identityKey: true });
             setUserPublicKey(publicKey.publicKey);
-            console.log('User public key:', userPublicKey);
           }
         }
       } catch (error) {
@@ -279,7 +280,7 @@ export default function ThreadDetail({ thread }) {
             asked {thread.saved_at ? new Date(thread.saved_at).toLocaleString() : 'unknown date'}
           </span>
           <span>by {question.userInfo.real_name || 'Anonymous'}</span>
-          {thread.verified ? (
+          {!!verifiedMap[thread._id]?.status ? (
             <span className="verified">Verified</span>
           ) : (
             <span className="unverified">Unverified</span>

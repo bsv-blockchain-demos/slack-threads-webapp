@@ -16,8 +16,6 @@ export default async function ThreadPage({ params }) {
     await dbConnect(); // Connect to MongoDB
     const thread = await getThreadById(threadId); // Direct database access
 
-    console.log('Thread:', thread);
-
     if (!thread) {
       throw new Error('Thread not found');
     }
@@ -41,8 +39,6 @@ export default async function ThreadPage({ params }) {
         }
       })
     );
-
-    console.log('Thread with PayMail and Votes:', thread);
 
     return (
       <>
