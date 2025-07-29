@@ -175,7 +175,7 @@ export default function ThreadDetail({ thread }) {
           if (userIdToNameMap[userId]) continue;
 
           const matchedUser = allUsersInThread.find((u) => u.id === userId);
-          userIdToNameMap[userId] = matchedUser?.real_name || "UnknownUser";
+          userIdToNameMap[userId] = matchedUser?.username || matchedUser?.real_name || "UnknownUser";
         }
 
         // Replace mentions in the message text

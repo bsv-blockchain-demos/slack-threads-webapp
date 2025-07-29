@@ -117,7 +117,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
               if (userIdToNameMap[userId]) continue; // skip if already mapped
 
               const matchedUser = allUsersInThread.find(u => u.id === userId);
-              userIdToNameMap[userId] = matchedUser?.real_name || 'UnknownUser';
+              userIdToNameMap[userId] = matchedUser?.username || matchedUser?.real_name || 'UnknownUser';
             }
 
             // Replace mentions in text
