@@ -271,7 +271,7 @@ export default function ThreadDetail({ thread }) {
           <span>
             asked {thread.saved_at ? new Date(thread.saved_at).toLocaleString() : 'unknown date'}
           </span>
-          <span>by {question.userInfo.real_name || 'Anonymous'}</span>
+          <span>by {question.userInfo?.username || question.userInfo?.real_name || 'Anonymous'}</span>
           {!!verifiedMap[thread._id]?.status ? (
             <span className="verified">Verified</span>
           ) : (
@@ -343,10 +343,10 @@ export default function ThreadDetail({ thread }) {
               )}
               <div className="user-info">
                 <div className="user-avatar">
-                  {question.userInfo.real_name?.[0]?.toUpperCase() || 'U'}
+                  {question.userInfo?.username?.[0]?.toUpperCase() || question.userInfo?.real_name?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <div>
-                  <div className="user-name">{question.userInfo.real_name}</div>
+                  <div className="user-name">{question.userInfo?.username || question.userInfo?.real_name || 'Anonymous'}</div>
                   <div className="user-timestamp">
                     asked {thread.saved_at ? new Date(thread.saved_at).toLocaleString() : 'unknown'}
                   </div>
@@ -451,10 +451,10 @@ export default function ThreadDetail({ thread }) {
                       )}
                       <div className="user-info">
                         <div className="user-avatar">
-                          {answer.userInfo.real_name?.[0]?.toUpperCase() || 'U'}
+                          {answer.userInfo?.username?.[0]?.toUpperCase() || answer.userInfo?.real_name?.[0]?.toUpperCase() || 'U'}
                         </div>
                         <div>
-                          <div className="user-name">{answer.userInfo.real_name}</div>
+                          <div className="user-name">{answer.userInfo?.username || answer.userInfo?.real_name || 'Anonymous'}</div>
                           <div className="user-timestamp">
                             answered {answer.ts ? new Date(answer.ts * 1000).toLocaleString() : 'unknown'}
                           </div>

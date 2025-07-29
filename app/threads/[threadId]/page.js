@@ -57,6 +57,7 @@ export default async function ThreadPage({ params }) {
       const votes = voteMap[message.ts];
     
       message.paymail = user?.paymail || null;
+      message.userInfo.username = user?.username || null;
       message.votes = votes || { upvotes: [], downvotes: [] };
     }
 

@@ -209,7 +209,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
                     ) : (
                       <span className="unverified">Unverified</span>
                     )}
-                    <span className="asked-by">Asked by {question.userInfo?.real_name || 'Anonymous'}</span>
+                    <span className="asked-by">Asked by {question.userInfo?.username || question.userInfo?.real_name || 'Anonymous'}</span>
                     {thread.saved_at && (
                       <span className="timestamp">{new Date(thread.saved_at).toLocaleString()}</span>
                     )}
