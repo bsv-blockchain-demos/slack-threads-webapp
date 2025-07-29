@@ -55,8 +55,52 @@ export default function ThreadDetail({ thread }) {
         console.error('Failed to connect wallet:', error);
         // Show popup message
         if (!hasAlertedRef.current) {
-          toast.error('Failed to connect wallet. \n To interact with the app, please open a wallet client.', {
-            duration: 5000,
+          toast((t) => (
+            <div
+              style={{
+                background: '#fef2f2',
+                color: '#b91c1c',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                position: 'relative',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                maxWidth: '400px',
+                whiteSpace: 'pre-line',
+                fontSize: '14px',
+              }}
+            >
+              {/* Dismiss button */}
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#b91c1c',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                }}
+                aria-label="Close"
+              >
+                ×
+              </button>
+
+              {/* Message with hyperlink */}
+              Failed to connect wallet.{"\n"}
+              To interact with the app, please open a wallet client.{" "}
+              <a
+                href="https://metanet.bsvb.tech"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'underline', color: '#b91c1c', fontWeight: 'bold' }}
+              >
+                Learn more
+              </a>
+            </div>
+          ), {
+            duration: 8000,
             position: 'top-center',
             id: 'wallet-connect-error',
           });
