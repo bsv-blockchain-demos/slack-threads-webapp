@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Hash, Utils, LookupResolver } from '@bsv/sdk';
+import { Hash, Utils, LookupResolver, Transaction } from '@bsv/sdk';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -33,32 +33,26 @@ export async function POST(req) {
 
 async function verifyThreadIntegrity(thread) {
     // Create fileHash to compare with txFileHash
-    const filteredThread = createFilteredThreadInfo({ thread_ts: thread.ts, channel: thread.channel, saved_by: thread.saved_by, last_updated: thread.last_updated, messages: thread.messages });
+    const filteredThread = createFilteredThreadInfo({ thread_ts: thread._id, channel: thread.channel, saved_by: thread.saved_by, last_updated: thread.last_updated, messages: thread.messages });
     const fileHash = Hash.hash256(Utils.toArray(JSON.stringify(filteredThread) + randomSecret, "utf8"));
+    const hashHexString = Utils.toHex(fileHash);
 
     // Get transaction from overlay
     const overlay = new LookupResolver()
 
     const response = await overlay.query({
         service: 'ls_slackthread', query: {
-            threadHash: fileHash
+            threadHash: hashHexString
         }
     }, 10000);
-    console.log('Response:', response);
 
     // Return true if all checks pass
     // lockingScript.chunks[1].data = threadHash (num array)
     if (response.outputs.length > 0) {
-        const lockingScript = response.outputs[0].lockingScript; //TODO: Get actual locking script from tx
-        const threadHash = lockingScript.chunks[1].data;
-        if (threadHash === fileHash) {
-            return { message: 'Integrity check passed for thread ' + thread + ' and hash ' + fileHash, success: true };
-        } else {
-            return { message: 'Integrity check failed for thread ' + thread + ' and hash ' + fileHash, success: false };
-        }
+        return { message: 'Integrity check passed for thread ' + thread._id + ' and hash ' + hashHexString, success: true };
+    } else {
+        return { message: 'Integrity check failed for thread ' + thread._id + ' and hash ' + hashHexString, success: false };
     }
-
-    return { message: 'Integrity check failed for thread ' + thread + ' and hash ' + fileHash, success: false };
 }
 
 function filterThreadMessages(messages) {

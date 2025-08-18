@@ -204,7 +204,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
                     </ReactMarkdown>
                   </Link>
                   <div className="thread-meta">
-                    {!!verifiedMap[thread._id]?.status ? (
+                    {verifiedMap[thread._id] ? (
                       <span className="verified">Verified</span>
                     ) : (
                       <span className="unverified">Unverified</span>
