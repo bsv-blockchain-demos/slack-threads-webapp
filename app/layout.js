@@ -9,6 +9,7 @@ import '../src/styles/ThreadDetail.css';
 import ToasterWrapper from '../src/components/toast';
 import { EmojiProvider } from '../src/context/EmojiContext';
 import { ThreadVerificationProvider } from '../src/context/threadVerifiedContext';
+import { WalletProvider } from '../src/context/walletContext';
 
 export const metadata = {
   title: 'Slack Threads',
@@ -20,19 +21,21 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <ThreadVerificationProvider>
-          <EmojiProvider>
-            <nav className="navbar">
-              <div className="navbar-container">
-                <Link href="/" className="navbar-brand">
-                  <Image src={bsvLogo} alt="BSV Logo" className="navbar-logo" width={40} height={40} />              <span>Slack Threads</span>
-                </Link>
-              </div>
-            </nav>
-            <main className="main-content">
-              {children}
-              <ToasterWrapper />
-            </main>
-          </EmojiProvider>
+          <WalletProvider>
+            <EmojiProvider>
+              <nav className="navbar">
+                <div className="navbar-container">
+                  <Link href="/" className="navbar-brand">
+                    <Image src={bsvLogo} alt="BSV Logo" className="navbar-logo" width={40} height={40} />              <span>Slack Threads</span>
+                  </Link>
+                </div>
+              </nav>
+              <main className="main-content">
+                {children}
+                <ToasterWrapper />
+              </main>
+            </EmojiProvider>
+          </WalletProvider>
         </ThreadVerificationProvider>
       </body>
     </html>

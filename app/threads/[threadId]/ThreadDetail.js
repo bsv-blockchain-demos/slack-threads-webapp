@@ -5,26 +5,23 @@ import remarkGfm from 'remark-gfm';
 import { SlackImage } from '../../../src/components/slackImage';
 import { convertSlackMarkdown } from '../../../src/components/ThreadList';
 import Link from 'next/link';
-import { connectWallet, signVote } from '../../../src/components/walletServiceHooks';
 import { useState, useEffect, useRef } from 'react';
 import { Random, Utils } from '@bsv/sdk';
-import { toast } from 'react-hot-toast';
 import { wrapSlackMentions, Mention } from '../../../src/components/renderMentions';
 import { renderSlackStyleEmojis } from '../../../src/components/renderEmojis';
 import { useEmojiMap } from '../../../src/context/EmojiContext';
 import { useThreadVerification } from '../../../src/context/threadVerifiedContext';
+import { useWalletContext } from '../../../src/context/walletContext';
+import { signVote } from '../../../src/components/walletServiceHooks';
 import rehypeRaw from 'rehype-raw';
 
 import Modal from './Modal';
 
 export default function ThreadDetail({ thread }) {
   const [loading, setLoading] = useState(false);
-  const [wallet, setWallet] = useState(null);
-  const [userPublicKey, setUserPublicKey] = useState('');
   const [selectedMessageTS, setSelectedMessageTS] = useState('');
   const [selectedPaymail, setSelectedPaymail] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
 
   // Optimistic UI update states
   const [optimisticVotes, setOptimisticVotes] = useState({});
@@ -34,83 +31,10 @@ export default function ThreadDetail({ thread }) {
   const question = thread?.messages?.[0] || null;
   const answers = thread?.messages?.slice(1) || [];
 
-  const hasAlertedRef = useRef(false);
-
   const emojiMap = useEmojiMap();
   const { verifiedMap } = useThreadVerification();
 
-  useEffect(() => {
-    const initWallet = async () => {
-      try {
-        const walletInstance = await connectWallet();
-        setWallet(walletInstance);
-        if (walletInstance) {
-          setIsConnected(true);
-          if (!userPublicKey) {
-            const publicKey = await walletInstance.getPublicKey({ identityKey: true });
-            setUserPublicKey(publicKey.publicKey);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to connect wallet:', error);
-        // Show popup message
-        if (!hasAlertedRef.current) {
-          toast((t) => (
-            <div
-              style={{
-                background: '#fef2f2',
-                color: '#b91c1c',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                position: 'relative',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                maxWidth: '400px',
-                whiteSpace: 'pre-line',
-                fontSize: '14px',
-              }}
-            >
-              {/* Dismiss button */}
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                style={{
-                  position: 'absolute',
-                  top: '8px',
-                  right: '8px',
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#b91c1c',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                }}
-                aria-label="Close"
-              >
-                ×
-              </button>
-
-              {/* Message with hyperlink */}
-              Failed to connect wallet.{"\n"}
-              To interact with the app, please open a wallet client.{" "}
-              <a
-                href="https://metanet.bsvb.tech"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ textDecoration: 'underline', color: '#b91c1c', fontWeight: 'bold' }}
-              >
-                Learn more
-              </a>
-            </div>
-          ), {
-            duration: 8000,
-            position: 'top-center',
-            id: 'wallet-connect-error',
-          });
-          hasAlertedRef.current = true;
-        }
-      }
-    };
-
-    initWallet();
-  }, []);
+  const { wallet, isConnected, userPublicKey } = useWalletContext();
 
   const handleTipClick = (messageTS, paymail) => {
     setSelectedMessageTS(messageTS);
