@@ -1,9 +1,52 @@
 import { NextResponse } from 'next/server'
 import { Hash, Utils, LookupResolver, Transaction } from '@bsv/sdk';
 import dotenv from 'dotenv';
-dotenv.config();
+
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config();
+}
 
 const randomSecret = process.env.RANDOM_SECRET;
+
+let verifyCache = globalThis._slackthreadsVerifyCache;
+
+if (!verifyCache) {
+    verifyCache = globalThis._slackthreadsVerifyCache = new Map();
+}
+
+function getCachedVerification(cacheKey) {
+    const entry = verifyCache.get(cacheKey);
+    if (!entry) return null;
+    if (entry.expiresAt <= Date.now()) {
+        verifyCache.delete(cacheKey);
+        return null;
+    }
+    return entry.value;
+}
+
+function setCachedVerification(cacheKey, value, ttlMs) {
+    verifyCache.set(cacheKey, {
+        value,
+        expiresAt: Date.now() + ttlMs,
+    });
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+    const results = new Array(items.length);
+    let index = 0;
+
+    async function worker() {
+        while (true) {
+            const currentIndex = index++;
+            if (currentIndex >= items.length) return;
+            results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+        }
+    }
+
+    const workers = Array.from({ length: Math.max(1, concurrency) }, () => worker());
+    await Promise.all(workers);
+    return results;
+}
 
 export async function POST(req) {
     try {
@@ -13,16 +56,25 @@ export async function POST(req) {
             return NextResponse.json({ error: 'threads must be an array' }, { status: 400 });
         }
 
-        const results = await Promise.all(
-            threads.map(async (thread) => {
-                try {
-                    const valid = await verifyThreadIntegrity(thread); // your existing check
-                    return { threadId: thread._id, success: valid.success };
-                } catch {
-                    return { threadId: thread._id, success: false };
-                }
-            })
-        );
+        const ttlMs = Number(process.env.VERIFY_CACHE_TTL_MS) || 5 * 60 * 1000;
+        const concurrency = Number(process.env.VERIFY_CONCURRENCY) || 5;
+
+        const results = await mapWithConcurrency(threads, concurrency, async (thread) => {
+            const cacheKey = `${thread?._id ?? ''}:${thread?.last_updated ?? ''}`;
+            const cached = getCachedVerification(cacheKey);
+            if (cached !== null) {
+                return { threadId: thread._id, success: cached };
+            }
+
+            try {
+                const valid = await verifyThreadIntegrity(thread);
+                setCachedVerification(cacheKey, Boolean(valid.success), ttlMs);
+                return { threadId: thread._id, success: valid.success };
+            } catch {
+                setCachedVerification(cacheKey, false, ttlMs);
+                return { threadId: thread._id, success: false };
+            }
+        });
 
         return NextResponse.json({ results }, { status: 200 });
     } catch (error) {

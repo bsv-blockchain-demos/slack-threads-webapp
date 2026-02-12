@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import dotenv from 'dotenv';
-dotenv.config();
+
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 export async function GET() {
   const slackToken = process.env.SLACK_BOT_TOKEN;

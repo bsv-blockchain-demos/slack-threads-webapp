@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 
 export async function GET(request, { params }) {

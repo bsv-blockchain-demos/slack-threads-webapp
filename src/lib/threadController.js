@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Get all threads - works both as a direct function call and as an API route handler
 export async function getAllThreads({ query, limit = 30, page = 1 } = {}) {
   const threadsCollection = mongoose.connection.db.collection('threads');
@@ -8,8 +12,19 @@ export async function getAllThreads({ query, limit = 30, page = 1 } = {}) {
 
   // Helper for search regex
   const buildSearchFilter = (query) => {
-    if (!query) return {};
-    const searchRegex = new RegExp(query.split(' ').join('|'), 'i');
+    const raw = (query ?? '').toString().trim();
+    if (!raw) return {};
+
+    const normalized = raw.slice(0, 100);
+    const terms = normalized
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 10)
+      .map(escapeRegExp);
+
+    if (terms.length === 0) return {};
+
+    const searchRegex = new RegExp(terms.join('|'), 'i');
     return { 'messages.0.text': searchRegex };
   };
 
@@ -35,7 +50,19 @@ export async function searchThreads(query) {
     return getAllThreads();
   }
 
-  const searchRegex = new RegExp(query.split(' ').join('|'), 'i');
+  const raw = (query ?? '').toString().trim();
+  const normalized = raw.slice(0, 100);
+  const terms = normalized
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 10)
+    .map(escapeRegExp);
+
+  if (terms.length === 0) {
+    return getAllThreads();
+  }
+
+  const searchRegex = new RegExp(terms.join('|'), 'i');
 
   const matchingThreads = await threadsCollection
     .find({ 'messages.0.text': searchRegex })

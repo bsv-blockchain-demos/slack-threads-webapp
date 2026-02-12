@@ -1,9 +1,14 @@
 import ThreadList from '../src/components/ThreadList';
 import '../src/styles/HomePage.css';
 import dotenv from 'dotenv';
+import dbConnect from '../src/lib/db';
+import { getAllThreads } from '../src/lib/threadController';
 import { getVotesByMessageTSBatch } from '../src/lib/voteController';
 import { getUsersByIdBatch } from '../src/lib/userController';
-dotenv.config();
+
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 export const dynamic = 'force-dynamic'; // Disable caching
 
@@ -27,23 +32,27 @@ export default async function ThreadsPage({ searchParams }) {
   page = Number(page) || 1;
   limit = 10;
 
-  // Fetch your threads from your API route (or directly call your DB function)
-  const res = await fetch(`${process.env.NEXT_PUBLIC_HOST}/api/threads?search=${encodeURIComponent(search)}&page=${page}&limit=${limit}`, {
-    // Make sure this fetch is from server, no caching to keep fresh data
-    cache: 'no-store',
+  await dbConnect();
+
+  const data = await getAllThreads({
+    query: search,
+    page,
+    limit,
   });
-  const data = await res.json();
 
   // Check votes for each message
   // Then add them into thread.messages
-  const allMessageTS = data.threads.flatMap(thread =>
-    thread.messages.map(message => message.ts)
-  );
-  const firstUserIds = data.threads.map(thread => thread.messages[0].user);
+  const firstMessageTS = data.threads
+    .map(thread => thread?.messages?.[0]?.ts)
+    .filter(Boolean);
+
+  const firstUserIds = data.threads
+    .map(thread => thread?.messages?.[0]?.user)
+    .filter(Boolean);
 
   let voteMap = {};
   try {
-    voteMap = await getVotesByMessageTSBatch(allMessageTS);
+    voteMap = await getVotesByMessageTSBatch(firstMessageTS);
   } catch (error) {
     console.error('Error fetching votes:', error);
     return;
@@ -59,9 +68,7 @@ export default async function ThreadsPage({ searchParams }) {
 
   for (const thread of data.threads) {
     thread.messages[0].userInfo.username = userMap[thread.messages[0].user]?.username || null;
-    for (const message of thread.messages) {
-      message.votes = voteMap[message.ts] || { upvotes: [], downvotes: [] };
-    }
+    thread.messages[0].votes = voteMap[thread.messages[0].ts] || { upvotes: [], downvotes: [] };
   }
 
   return (
