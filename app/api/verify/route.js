@@ -14,21 +14,45 @@ if (!verifyCache) {
     verifyCache = globalThis._slackthreadsVerifyCache = new Map();
 }
 
-function getCachedVerification(cacheKey) {
-    const entry = verifyCache.get(cacheKey);
-    if (!entry) return null;
-    if (entry.expiresAt <= Date.now()) {
-        verifyCache.delete(cacheKey);
-        return null;
+const SWEEP_TRIGGER_THRESHOLD = 100;
+
+function sweepExpiredVerifyCache() {
+    const now = Date.now();
+    for (const [key, entry] of verifyCache.entries()) {
+        if (!entry || entry.expiresAt <= now) {
+            verifyCache.delete(key);
+        }
     }
-    return entry.value;
 }
 
-function setCachedVerification(cacheKey, value, ttlMs) {
+function getOrSetVerification(cacheKey, ttlMs, verifierFn) {
+    if (ttlMs <= 0) {
+        return verifierFn();
+    }
+
+    if (verifyCache.size >= SWEEP_TRIGGER_THRESHOLD) {
+        sweepExpiredVerifyCache();
+    }
+
+    const cached = verifyCache.get(cacheKey);
+
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.value;
+    }
+
+    const promise = Promise.resolve()
+        .then(() => verifierFn())
+        .catch((err) => {
+            verifyCache.delete(cacheKey);
+            throw err;
+        });
+
     verifyCache.set(cacheKey, {
-        value,
+        value: promise,
         expiresAt: Date.now() + ttlMs,
     });
+
+    return promise;
 }
 
 async function mapWithConcurrency(items, concurrency, mapper) {
@@ -61,19 +85,17 @@ export async function POST(req) {
 
         const results = await mapWithConcurrency(threads, concurrency, async (thread) => {
             const cacheKey = `${thread?._id ?? ''}:${thread?.last_updated ?? ''}`;
-            const cached = getCachedVerification(cacheKey);
-            if (cached !== null) {
-                return { threadId: thread._id, success: cached };
-            }
+            const successPromise = getOrSetVerification(cacheKey, ttlMs, async () => {
+                try {
+                    const valid = await verifyThreadIntegrity(thread);
+                    return Boolean(valid.success);
+                } catch {
+                    return false;
+                }
+            });
 
-            try {
-                const valid = await verifyThreadIntegrity(thread);
-                setCachedVerification(cacheKey, Boolean(valid.success), ttlMs);
-                return { threadId: thread._id, success: valid.success };
-            } catch {
-                setCachedVerification(cacheKey, false, ttlMs);
-                return { threadId: thread._id, success: false };
-            }
+            const success = await successPromise;
+            return { threadId: thread._id, success };
         });
 
         return NextResponse.json({ results }, { status: 200 });
