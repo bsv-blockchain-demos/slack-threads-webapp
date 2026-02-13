@@ -83,6 +83,7 @@ export default function ThreadDetail({ thread }) {
 
   useEffect(() => {
     async function convertMentions(thread) {
+      if (!thread?.messages) return;
       const allUsersInThread = thread.messages.map((msg) => msg.userInfo);
 
       for (const message of thread.messages) {
@@ -109,7 +110,7 @@ export default function ThreadDetail({ thread }) {
       }
     }
     convertMentions(thread);
-  }, []);
+  }, [thread]);
 
   if (!thread) return <div className="error">Thread not found</div>;
 

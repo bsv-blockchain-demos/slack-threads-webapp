@@ -71,6 +71,7 @@ function ThreadList({ initialThreads, initialSearch, initialPage, initialLimit, 
     }
 
     verifyThreads(threads);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   // Sync state when props change

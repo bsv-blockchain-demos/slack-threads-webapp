@@ -22,64 +22,62 @@ export const WalletProvider = ({ children }) => {
                 setWallet(walletInstance);
                 if (walletInstance) {
                     setIsConnected(true);
-                    if (!userPublicKey) {
-                        const publicKey = await walletInstance.getPublicKey({ identityKey: true });
-                        setUserPublicKey(publicKey.publicKey);
-                        toast((t) => (
-                            <div
+                    const publicKey = await walletInstance.getPublicKey({ identityKey: true });
+                    setUserPublicKey(publicKey.publicKey);
+                    toast((t) => (
+                        <div
+                            style={{
+                                background: '#f0fdf4',
+                                color: '#15803d',
+                                padding: '12px 32px 12px 16px',
+                                borderRadius: '8px',
+                                position: 'relative',
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                maxWidth: '400px',
+                                fontSize: '14px',
+                                border: '1px solid #bbf7d0',
+                            }}
+                        >
+                            {/* Success icon */}
+                            <span
                                 style={{
-                                    background: '#f0fdf4',
-                                    color: '#15803d',
-                                    padding: '12px 32px 12px 16px',
-                                    borderRadius: '8px',
-                                    position: 'relative',
-                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                                    maxWidth: '400px',
-                                    fontSize: '14px',
-                                    border: '1px solid #bbf7d0',
+                                    marginRight: '8px',
+                                    fontSize: '16px',
                                 }}
                             >
-                                {/* Success icon */}
-                                <span
-                                    style={{
-                                        marginRight: '8px',
-                                        fontSize: '16px',
-                                    }}
-                                >
-                                    ✅
-                                </span>
-                                
-                                {/* Dismiss button */}
-                                <button
-                                    onClick={() => toast.dismiss(t.id)}
-                                    style={{
-                                        position: 'absolute',
-                                        top: '8px',
-                                        right: '8px',
-                                        background: 'transparent',
-                                        border: 'none',
-                                        color: '#15803d',
-                                        fontSize: '16px',
-                                        cursor: 'pointer',
-                                    }}
-                                    aria-label="Close"
-                                >
-                                    ×
-                                </button>
+                                ✅
+                            </span>
+                            
+                            {/* Dismiss button */}
+                            <button
+                                onClick={() => toast.dismiss(t.id)}
+                                style={{
+                                    position: 'absolute',
+                                    top: '8px',
+                                    right: '8px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#15803d',
+                                    fontSize: '16px',
+                                    cursor: 'pointer',
+                                }}
+                                aria-label="Close"
+                            >
+                                ×
+                            </button>
 
-                                {/* Success message */}
-                                <strong>Wallet connected successfully!</strong>
-                                <br />
-                                <span style={{ fontSize: '12px', opacity: 0.8 }}>
-                                    You're ready to interact with the app.
-                                </span>
-                            </div>
-                        ), {
-                            duration: 4000,
-                            position: 'top-center',
-                            id: 'wallet-connect-success',
-                        });
-                    }
+                            {/* Success message */}
+                            <strong>Wallet connected successfully!</strong>
+                            <br />
+                            <span style={{ fontSize: '12px', opacity: 0.8 }}>
+                                You&apos;re ready to interact with the app.
+                            </span>
+                        </div>
+                    ), {
+                        duration: 4000,
+                        position: 'top-center',
+                        id: 'wallet-connect-success',
+                    });
                 }
             } catch (error) {
                 console.error('Failed to connect wallet:', error);
