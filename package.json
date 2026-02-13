@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@bsv/paymail": "^2.0.2",
-    "@bsv/sdk": "^1.6.5",
+    "@bsv/sdk": "^1.9.2",
     "dotenv": "^16.3.1",
     "emoji-dictionary": "^1.0.12",
     "mongoose": "^8.0.0",
-    "next": "15.3.3",
+    "next": "^15.5.12",
     "node-fetch": "^3.3.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
