@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import dbConnect from '@/src/lib/db'
+import dbConnect from '../../src/lib/db'
 import mongoose from 'mongoose'
 
 // checks db liveness using the shared connection
