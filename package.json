@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@bsv/paymail": "^2.0.2",
-    "@bsv/sdk": "^1.9.2",
+    "@bsv/sdk": "^2.0.7",
     "dotenv": "^16.3.1",
     "emoji-dictionary": "^1.0.12",
     "mongoose": "^8.0.0",
