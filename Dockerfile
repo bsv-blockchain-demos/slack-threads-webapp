@@ -1,5 +1,8 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:22-alpine3.23 AS builder
+
+# Upgrade OS packages to pick up security patches (e.g. zlib CVE-2026-22184)
+RUN apk upgrade --no-cache
 
 # Install dependencies for native modules
 RUN apk add --no-cache libc6-compat
@@ -19,9 +22,12 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:22-alpine3.23 AS runner
 
 WORKDIR /app
+
+# Upgrade OS packages to pick up security patches (e.g. zlib CVE-2026-22184)
+RUN apk upgrade --no-cache
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
