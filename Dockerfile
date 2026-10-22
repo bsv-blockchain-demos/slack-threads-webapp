@@ -1,5 +1,5 @@
 # Build stage
-FROM node:22-alpine3.23 AS builder
+FROM node:22.23.4-alpine3.23 AS builder
 
 # Upgrade OS packages to pick up security patches (e.g. zlib CVE-2026-22184)
 RUN apk upgrade --no-cache
@@ -22,7 +22,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:22-alpine3.23 AS runner
+FROM node:22.23.4-alpine3.23 AS runner
 
 WORKDIR /app
 
